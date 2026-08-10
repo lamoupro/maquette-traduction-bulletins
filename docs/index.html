@@ -111,9 +111,12 @@
      clip-path n'est pas repeint de façon fiable pendant le défilement sur
      iOS Safari, ce qui faisait déborder le document sur la section suivante.
      `contain` et `isolation` verrouillent en plus le rendu dans la carte. */
+  /* `overflow:hidden` suffit à contenir le rendu. `contain:paint` avait été
+     ajouté par précaution mais déclenche des bugs de rendu sur certaines
+     versions de Safari — retiré, il n'apportait rien de plus ici. */
   .compare{position:relative;overflow:hidden;border-radius:6px;border:1px solid var(--rule);
     aspect-ratio:1000/1417;background:#fff;user-select:none;-webkit-user-select:none;
-    isolation:isolate;contain:paint;--pos:50%;}
+    isolation:isolate;--pos:50%;}
   .doc-base{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
   .doc-clip{position:absolute;top:0;left:0;height:100%;width:var(--pos);overflow:hidden;}
   .doc-clip img{position:absolute;top:0;left:0;height:100%;width:auto;max-width:none;}
@@ -203,7 +206,9 @@
   .logo-strip{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--paper-raised);padding:30px 0 32px;}
   .logo-strip .eyebrow{display:block;text-align:center;margin-bottom:20px;}
   .logo-item{display:flex;align-items:center;gap:13px;flex:none;}
-  .logo-chip{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:center;flex:none;}
+  /* Hauteur fixée : le bandeau ne peut plus changer de taille au chargement
+     des logos, donc aucun décalage de mise en page à corriger après coup. */
+  .logo-chip{background:#fff;border:1px solid var(--rule);border-radius:8px;padding:9px 14px;display:flex;align-items:center;justify-content:center;flex:none;height:72px;}
   .logo-chip img{width:auto;}
   .logo-chip img.ata{height:54px;}
   .logo-chip img.atc{height:38px;}
@@ -339,9 +344,9 @@
           <span>GLISSER POUR COMPARER</span>
         </div>
         <div class="compare" id="compare">
-          <img class="doc-base" src="assets/slider_en.jpg" alt="Bulletin traduit en anglais par un traducteur assermenté">
+          <img class="doc-base" src="assets/slider_en.jpg" width="1000" height="1417" decoding="async" alt="Bulletin traduit en anglais par un traducteur assermenté">
           <div class="doc-clip" id="docClip">
-            <img src="assets/slider_fr.jpg" alt="Bulletin de notes original en français">
+            <img src="assets/slider_fr.jpg" width="1000" height="1417" decoding="async" alt="Bulletin de notes original en français">
           </div>
           <span class="doc-tag fr">Original FR</span>
           <span class="doc-tag en">Traduction assermentée</span>
@@ -421,10 +426,10 @@
   <div class="hscroll" id="logosScroller" tabindex="0" role="region"
        aria-label="Certifications et partenaires — faites défiler horizontalement">
     <div class="hscroll-track logos-track" id="logosTrack">
-      <div class="logo-item"><span class="logo-chip"><img class="ata" src="assets/ata.png" alt="American Translators Association"></span></div>
-      <div class="logo-item"><span class="logo-chip"><img class="atc" src="assets/atc.png" alt="Association of Translation Companies"></span></div>
+      <div class="logo-item"><span class="logo-chip"><img class="ata" src="assets/ata.png" width="320" height="320" alt="American Translators Association"></span></div>
+      <div class="logo-item"><span class="logo-chip"><img class="atc" src="assets/atc.png" width="640" height="165" alt="Association of Translation Companies"></span></div>
       <div class="logo-item">
-        <span class="logo-chip"><img class="th" src="assets/th.png" alt="Trackhouse"></span>
+        <span class="logo-chip"><img class="th" src="assets/th.png" width="340" height="280" alt="Trackhouse"></span>
         <div class="badge-copy"><span class="badge-name">Trackhouse</span><span class="badge-role">Recrutement athlétique universitaire</span></div>
       </div>
       <div class="delivery-badge">
