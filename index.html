@@ -203,7 +203,17 @@
   .reviews-head{max-width:560px;margin:0 auto 28px;text-align:center;display:flex;flex-direction:column;gap:9px;align-items:center;}
   .reviews-head h2{font-size:clamp(1.5rem,2.6vw,1.95rem);}
   .reviews-head p{color:var(--ink-soft);font-size:0.95rem;margin:0;}
-  .reviews .marquee-track{gap:20px;animation-duration:78s;}
+  /* Carrousel à défilement natif : le doigt, le trackpad et le glisser-déposer
+     à la souris le contrôlent directement. L'avance automatique est pilotée en
+     JavaScript (voir plus bas) et se remet en route après 5 s sans interaction. */
+  .reviews-scroller{width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    scrollbar-width:none;-ms-overflow-style:none;cursor:grab;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+  .reviews-scroller::-webkit-scrollbar{display:none;}
+  .reviews-scroller.is-dragging{cursor:grabbing;}
+  .reviews-scroller.is-dragging .review-card{user-select:none;}
+  .reviews-track{display:flex;align-items:stretch;gap:20px;width:max-content;padding:6px 0;}
   .review-card{flex:none;width:318px;background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;padding:19px 20px;margin:0;display:flex;flex-direction:column;gap:11px;box-shadow:0 10px 24px -20px var(--shadow);}
   .review-stars{display:flex;gap:2px;}
   .review-stars svg{width:15px;height:15px;color:#E4A33B;}
@@ -215,7 +225,7 @@
   @media (max-width:640px){
     .reviews{padding:38px 0 42px;}
     .review-card{width:270px;padding:16px 17px;}
-    .reviews .marquee-track{animation-duration:62s;}
+    .reviews-track{gap:14px;}
   }
 
   /* ---------- PARCOURS ---------- */
@@ -426,8 +436,9 @@
       <p>Des parents et des étudiants qui avaient une date limite à tenir.</p>
     </div>
   </div>
-  <div class="marquee">
-    <div class="marquee-track" id="reviewsTrack"></div>
+  <div class="reviews-scroller" id="reviewsScroller" tabindex="0" role="region"
+       aria-label="Avis clients — faites défiler horizontalement">
+    <div class="reviews-track" id="reviewsTrack"></div>
   </div>
 </section>
 
@@ -663,22 +674,134 @@
   ];
 
   var etoile = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.6l2.5 5.1 5.6.8-4 4 .9 5.6L10 14.4l-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>';
-  var reviewsTrack = document.getElementById('reviewsTrack');
-  if(reviewsTrack){
-    reviewsTrack.innerHTML = AVIS.map(function(a){
-      return '<figure class="review-card">' +
-               '<div class="review-stars" role="img" aria-label="5 étoiles sur 5">' + new Array(6).join(etoile) + '</div>' +
-               '<blockquote class="review-text">' + a.texte + '</blockquote>' +
-               '<figcaption class="review-meta">' +
-                 '<span class="review-av" aria-hidden="true">' + a.nom.charAt(0) + '</span>' +
-                 '<span><span class="review-name">' + a.nom + '</span>' +
-                 '<span class="review-ctx">' + a.contexte + '</span></span>' +
-               '</figcaption>' +
-             '</figure>';
-    }).join('');
+
+  function carteAvis(a, muet){
+    return '<figure class="review-card"' + (muet ? ' aria-hidden="true"' : '') + '>' +
+             '<div class="review-stars" role="img" aria-label="5 étoiles sur 5">' + new Array(6).join(etoile) + '</div>' +
+             '<blockquote class="review-text">' + a.texte + '</blockquote>' +
+             '<figcaption class="review-meta">' +
+               '<span class="review-av" aria-hidden="true">' + a.nom.charAt(0) + '</span>' +
+               '<span><span class="review-name">' + a.nom + '</span>' +
+               '<span class="review-ctx">' + a.contexte + '</span></span>' +
+             '</figcaption>' +
+           '</figure>';
   }
 
-  /* Duplication des pistes pour un défilement en boucle sans raccord */
+  /* ---------- Carrousel d'avis : avance lente + contrôle manuel ----------
+     Trois copies de la série sont posées côte à côte. On maintient la position
+     dans la copie du milieu : il reste donc toujours une série entière de marge
+     de chaque côté, ce qui permet de remonter en arrière indéfiniment.
+     L'avance automatique se coupe dès que l'utilisateur touche, et repart
+     5 secondes après sa dernière action. */
+  var scroller = document.getElementById('reviewsScroller');
+  var piste = document.getElementById('reviewsTrack');
+
+  if(scroller && piste){
+    var VITESSE = 24;      // pixels par seconde — défilement lent
+    var REPRISE = 5000;    // délai d'inactivité avant reprise, en millisecondes
+
+    piste.innerHTML = AVIS.map(function(a){ return carteAvis(a, false); }).join('') +
+                      AVIS.map(function(a){ return carteAvis(a, true); }).join('') +
+                      AVIS.map(function(a){ return carteAvis(a, true); }).join('');
+
+    var serie = 0;                 // largeur d'une série, recalculée au besoin
+    var auto = true;
+    var attendu = 0;               // position que nous avons nous-mêmes écrite
+    var minuteur = null;
+    var glisse = false, departX = 0, departScroll = 0;
+
+    function mesurer(){
+      serie = piste.scrollWidth / 3;
+      if(serie > 0 && scroller.scrollLeft < 1){
+        scroller.scrollLeft = serie;   // on démarre dans la copie du milieu
+        attendu = scroller.scrollLeft;
+      }
+    }
+
+    function reboucler(){
+      if(serie <= 0) return;
+      if(scroller.scrollLeft >= serie * 2)      scroller.scrollLeft -= serie;
+      else if(scroller.scrollLeft < serie * 0.5) scroller.scrollLeft += serie;
+    }
+
+    function suspendre(){
+      auto = false;
+      clearTimeout(minuteur);
+      minuteur = setTimeout(function(){ auto = true; }, REPRISE);
+    }
+
+    // L'utilisateur touche, glisse ou utilise la molette : on suspend
+    scroller.addEventListener('pointerdown', function(e){
+      suspendre();
+      if(e.pointerType !== 'mouse') return;   // le tactile est géré nativement
+      glisse = true;
+      departX = e.clientX;
+      departScroll = scroller.scrollLeft;
+      scroller.setPointerCapture(e.pointerId);
+      scroller.classList.add('is-dragging');
+      e.preventDefault();
+    });
+    scroller.addEventListener('pointermove', function(e){
+      if(!glisse) return;
+      scroller.scrollLeft = departScroll - (e.clientX - departX);
+      reboucler();
+      attendu = scroller.scrollLeft;
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+      scroller.addEventListener(ev, function(){
+        if(glisse){ glisse = false; scroller.classList.remove('is-dragging'); }
+        suspendre();
+      });
+    });
+    scroller.addEventListener('wheel', suspendre, {passive:true});
+
+    // Défilement natif (doigt, trackpad, inertie) : écart avec notre position.
+    // Le rebouclage attend l'arrêt complet du défilement : le faire pendant
+    // l'inertie couperait l'élan sur iOS.
+    var finDeScroll = null;
+    scroller.addEventListener('scroll', function(){
+      if(Math.abs(scroller.scrollLeft - attendu) > 2) suspendre();
+      attendu = scroller.scrollLeft;
+      clearTimeout(finDeScroll);
+      finDeScroll = setTimeout(function(){
+        if(glisse) return;
+        reboucler();
+        attendu = scroller.scrollLeft;
+      }, 140);
+    }, {passive:true});
+
+    // Navigation au clavier
+    scroller.addEventListener('keydown', function(e){
+      if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      suspendre();
+      scroller.scrollLeft += (e.key === 'ArrowRight' ? 1 : -1) * 340;
+      reboucler();
+      attendu = scroller.scrollLeft;
+      e.preventDefault();
+    });
+
+    var reduit = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var precedent = 0;
+    function image(ts){
+      if(!precedent) precedent = ts;
+      // Écart borné à 50 ms : après un retour d'onglet ou une image sautée,
+      // le carrousel reprend en douceur au lieu de bondir.
+      var ecoule = Math.min((ts - precedent) / 1000, 0.05);
+      precedent = ts;
+      if(auto && !glisse && !reduit.matches){
+        scroller.scrollLeft += VITESSE * ecoule;
+        reboucler();
+        attendu = scroller.scrollLeft;
+      }
+      requestAnimationFrame(image);
+    }
+
+    mesurer();
+    window.addEventListener('resize', mesurer);
+    requestAnimationFrame(image);
+  }
+
+  /* Duplication du bandeau de logos, qui reste en animation CSS */
   [].forEach.call(document.querySelectorAll('.marquee-track'), function(track){
     [].slice.call(track.children).forEach(function(node){
       var copy = node.cloneNode(true);
