@@ -31,6 +31,31 @@
   @media (prefers-reduced-motion: reduce){ *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;} html{scroll-behavior:auto;} }
   #dossier,#process,#documents,#assermentation,#faq,#avis{scroll-margin-top:96px;}
 
+  /* ---------- BANDEAU OFFRE D'AOÛT ----------
+     35 € est le tarif réellement pratiqué auparavant : le prix barré est donc
+     un prix de référence légitime. Le compte à rebours vise une fin réelle au
+     31 août et ne se réinitialise pas. */
+  .promo-bar{position:relative;background:var(--brass);color:#fff;font-size:0.82rem;}
+  .promo-bar .wrap{display:flex;align-items:center;justify-content:center;gap:12px;
+    padding:9px 40px 9px 32px;flex-wrap:wrap;text-align:center;line-height:1.35;}
+  .promo-bar strong{font-weight:700;}
+  .promo-bar s{opacity:0.72;}
+  .promo-bar .pb-timer{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+    font-weight:700;background:rgba(255,255,255,0.18);border-radius:5px;padding:4px 10px;white-space:nowrap;}
+  .promo-bar .pb-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;
+    border:none;color:rgba(255,255,255,0.8);font-size:1.1rem;cursor:pointer;line-height:1;padding:4px 8px;}
+  @media (max-width:640px){ .promo-bar{font-size:0.74rem;} .promo-bar .wrap{gap:7px;padding:8px 32px 8px 12px;} }
+
+  /* ---------- QUANTITÉ ---------- */
+  .qty{display:flex;align-items:center;gap:2px;flex:none;}
+  .qty button{width:30px;height:30px;border:1px solid var(--rule);background:var(--paper-raised);
+    color:var(--ink);border-radius:6px;font-size:1.05rem;line-height:1;cursor:pointer;padding:0;}
+  .qty button:hover:not(:disabled){border-color:var(--brass);color:var(--brass);}
+  .qty button:disabled{opacity:0.35;cursor:default;}
+  .qty .qty-val{min-width:34px;text-align:center;font-variant-numeric:tabular-nums;font-weight:700;font-size:0.98rem;}
+  .amount-wrap{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;}
+  .amount-old{font-size:0.92rem;color:var(--ink-soft);text-decoration:line-through;}
+
   /* ---------- NAV ---------- */
   .nav{position:sticky;top:0;z-index:40;background:color-mix(in srgb, var(--paper) 92%, transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);}
   .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:76px;}
@@ -165,7 +190,7 @@
 
   @media (max-width:640px){
     .dossier{padding:18px;gap:13px;}
-    .dossier .doctype-lock{display:none;}
+    .dossier .doctype-lock{padding:9px 11px;font-size:0.82rem;}
     .dossier .price-row{padding:11px 0;}
     .dossier .price-row .amount{font-size:1.8rem;}
     .upload{padding:12px;flex-direction:row;justify-content:center;gap:9px;text-align:left;}
@@ -328,6 +353,14 @@
   .pay-icons span{border:1px solid var(--rule);border-radius:4px;padding:3px 8px;}
 </style>
 
+<div class="promo-bar" id="promoBar" hidden>
+  <div class="wrap">
+    <span><strong>Offre d'août</strong> — <s>35 €</s> <strong>25 €</strong> le document</span>
+    <span class="pb-timer" id="promoTimer">—</span>
+  </div>
+  <button class="pb-x" id="promoX" type="button" aria-label="Masquer cette annonce">×</button>
+</div>
+
 <header class="nav">
   <div class="wrap">
     <div class="logo">
@@ -352,7 +385,7 @@
       <span class="eyebrow">Traduction certifiée de bulletins scolaires</span>
       <h1>Votre bulletin de notes, traduit et certifié, sans devis à attendre.</h1>
       <p class="lead">
-        <span class="lead-long">Déposez votre bulletin, choisissez la langue d'arrivée, payez 25&nbsp;€. Un traducteur assermenté prend le relais — livraison sous 24 à 48&nbsp;h, reconnue par les universités et administrations.</span>
+        <span class="lead-long">Déposez votre bulletin, choisissez la langue d'arrivée, payez 25&nbsp;€ au lieu de 35&nbsp;€. Un traducteur assermenté prend le relais — livraison sous 24 à 48&nbsp;h, reconnue par les universités et administrations.</span>
         <span class="lead-short">Traduction assermentée en 24 à 48&nbsp;h, reconnue par les universités et administrations.</span>
       </p>
       <div class="trustchips">
@@ -411,13 +444,20 @@
         </div>
 
         <div class="doctype-lock">
-          <span class="name">Bulletin de notes — collège / lycée</span>
-          <span class="tag">1 document</span>
+          <span class="name">Bulletins de notes</span>
+          <span class="qty">
+            <button type="button" id="qtyMinus" aria-label="Retirer un document">−</button>
+            <span class="qty-val" id="qtyVal" aria-live="polite">1</span>
+            <button type="button" id="qtyPlus" aria-label="Ajouter un document">+</button>
+          </span>
         </div>
 
         <div class="price-row">
           <span class="label" id="pricelabel">Traduction assermentée Français → Anglais</span>
-          <span class="amount tabular">25<sup>€</sup></span>
+          <span class="amount-wrap">
+            <s class="amount-old tabular" id="priceOld">35 €</s>
+            <span class="amount tabular" id="priceNow">25<sup>€</sup></span>
+          </span>
         </div>
 
         <label class="upload" id="uploadZone">
@@ -595,8 +635,8 @@
 
 <div class="sticky-cta" id="stickyCta">
   <div>
-    <span class="sp-amount tabular">25&nbsp;€</span>
-    <span class="sp-label">Tout compris</span>
+    <span class="sp-amount tabular" id="stickyNow">25&nbsp;€</span>
+    <span class="sp-label"><s id="stickyOld">35 €</s> · tout compris</span>
   </div>
   <button class="btn btn-primary" type="button" id="stickyBtn">Traduire mon bulletin</button>
 </div>
@@ -1108,6 +1148,57 @@
     });
 
     if(refus < 2) timerSuivant = setTimeout(afficher, PREMIER);
+  }
+  /* ---------- Quantité, prix barré et compte à rebours ----------
+     35 € est le tarif réellement pratiqué auparavant, donc un prix de
+     référence légitime. Tous les montants affichés dérivent du même calcul. */
+  var PRIX_NORMAL = 35, PRIX_OFFRE = 25, MAX_DOCS = 40;
+  var qte = 1;
+  var elVal = document.getElementById('qtyVal');
+  var elMoins = document.getElementById('qtyMinus'), elPlus = document.getElementById('qtyPlus');
+  var elOld = document.getElementById('priceOld'), elNow = document.getElementById('priceNow');
+  var elPay = document.getElementById('payBtn');
+  var elSNow = document.getElementById('stickyNow'), elSOld = document.getElementById('stickyOld');
+
+  function eur(n){ return n.toLocaleString('fr-FR') + ' €'; }
+
+  function majPrix(){
+    var avant = qte * PRIX_NORMAL, apres = qte * PRIX_OFFRE;
+    if(elVal) elVal.textContent = qte;
+    if(elOld) elOld.textContent = eur(avant);
+    if(elNow) elNow.innerHTML = apres.toLocaleString('fr-FR') + '<sup>€</sup>';
+    if(elPay) elPay.textContent = 'Payer ' + eur(apres).replace(' ', '\u00a0') +
+      ' et faire traduire ' + (qte > 1 ? 'mes bulletins' : 'mon bulletin');
+    if(elSNow) elSNow.innerHTML = apres.toLocaleString('fr-FR') + '&nbsp;€';
+    if(elSOld) elSOld.textContent = eur(avant);
+    if(elMoins) elMoins.disabled = qte <= 1;
+    if(elPlus)  elPlus.disabled  = qte >= MAX_DOCS;
+  }
+  if(elMoins) elMoins.addEventListener('click', function(){ if(qte > 1){ qte--; majPrix(); } });
+  if(elPlus)  elPlus.addEventListener('click',  function(){ if(qte < MAX_DOCS){ qte++; majPrix(); } });
+  majPrix();
+
+  /* Compte à rebours : fin réelle au 31 août, sans réinitialisation. */
+  var promo = document.getElementById('promoBar');
+  if(promo){
+    var FIN = new Date(2026, 7, 31, 23, 59, 59);
+    var champ = document.getElementById('promoTimer');
+    var ferme = false;
+    try { ferme = sessionStorage.getItem('protranslayte:promo-fermee') === '1'; } catch(e){}
+    function tic(){
+      var reste = FIN - new Date();
+      if(reste <= 0){ promo.hidden = true; return; }
+      var s = Math.floor(reste/1000), j = Math.floor(s/86400);
+      var d2 = function(n){ return n < 10 ? '0'+n : ''+n; };
+      champ.textContent = (j > 0 ? j + 'j ' : '') + d2(Math.floor(s%86400/3600)) + ':' +
+                          d2(Math.floor(s%3600/60)) + ':' + d2(s%60);
+      setTimeout(tic, 1000);
+    }
+    if(!ferme && FIN > new Date()){ promo.hidden = false; tic(); }
+    document.getElementById('promoX').addEventListener('click', function(){
+      promo.hidden = true;
+      try { sessionStorage.setItem('protranslayte:promo-fermee','1'); } catch(e){}
+    });
   }
 })();
 </script>
