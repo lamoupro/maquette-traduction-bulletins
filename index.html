@@ -175,12 +175,20 @@
   @media (max-width:940px){ .sticky-cta{display:flex;} body{padding-bottom:82px;} }
   @media (prefers-reduced-motion: reduce){ .sticky-cta{transition:none;} }
 
-  /* ---------- DÉFILEMENTS (logos + avis) ---------- */
-  .marquee{width:100%;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
-  .marquee-track{display:flex;align-items:center;gap:68px;width:max-content;animation:marquee-scroll 24s linear infinite;}
-  .marquee:hover .marquee-track{animation-play-state:paused;}
-  @keyframes marquee-scroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
-  @media (prefers-reduced-motion: reduce){ .marquee-track{animation:none;} }
+  /* ---------- BANDEAUX DÉFILANTS (logos + avis) ----------
+     Même moteur pour les deux : défilement natif, donc contrôlable au doigt,
+     au trackpad et au glisser-déposer. L'avance automatique est pilotée en
+     JavaScript et reprend après un délai d'inactivité. */
+  .hscroll{width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+    scrollbar-width:none;-ms-overflow-style:none;cursor:grab;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
+  .hscroll::-webkit-scrollbar{display:none;}
+  .hscroll.is-dragging{cursor:grabbing;}
+  .hscroll.is-dragging *{user-select:none;}
+  .hscroll-track{display:flex;width:max-content;}
+  .logos-track{align-items:center;gap:68px;padding:2px 0;}
+  @media (max-width:640px){ .logos-track{gap:44px;} }
 
   .logo-strip{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--paper-raised);padding:30px 0 32px;}
   .logo-strip .eyebrow{display:block;text-align:center;margin-bottom:20px;}
@@ -206,14 +214,7 @@
   /* Carrousel à défilement natif : le doigt, le trackpad et le glisser-déposer
      à la souris le contrôlent directement. L'avance automatique est pilotée en
      JavaScript (voir plus bas) et se remet en route après 5 s sans interaction. */
-  .reviews-scroller{width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
-    scrollbar-width:none;-ms-overflow-style:none;cursor:grab;
-    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);}
-  .reviews-scroller::-webkit-scrollbar{display:none;}
-  .reviews-scroller.is-dragging{cursor:grabbing;}
-  .reviews-scroller.is-dragging .review-card{user-select:none;}
-  .reviews-track{display:flex;align-items:stretch;gap:20px;width:max-content;padding:6px 0;}
+  .reviews-track{align-items:stretch;gap:20px;padding:6px 0;}
   .review-card{flex:none;width:318px;background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;padding:19px 20px;margin:0;display:flex;flex-direction:column;gap:11px;box-shadow:0 10px 24px -20px var(--shadow);}
   .review-stars{display:flex;gap:2px;}
   .review-stars svg{width:15px;height:15px;color:#E4A33B;}
@@ -407,8 +408,9 @@
 
 <section class="logo-strip">
   <span class="eyebrow">Certifications &amp; partenaires</span>
-  <div class="marquee">
-    <div class="marquee-track">
+  <div class="hscroll" id="logosScroller" tabindex="0" role="region"
+       aria-label="Certifications et partenaires — faites défiler horizontalement">
+    <div class="hscroll-track logos-track" id="logosTrack">
       <div class="logo-item"><span class="logo-chip"><img class="ata" src="assets/ata.png" alt="American Translators Association"></span></div>
       <div class="logo-item"><span class="logo-chip"><img class="atc" src="assets/atc.png" alt="Association of Translation Companies"></span></div>
       <div class="logo-item">
@@ -436,9 +438,9 @@
       <p>Des parents et des étudiants qui avaient une date limite à tenir.</p>
     </div>
   </div>
-  <div class="reviews-scroller" id="reviewsScroller" tabindex="0" role="region"
+  <div class="hscroll" id="reviewsScroller" tabindex="0" role="region"
        aria-label="Avis clients — faites défiler horizontalement">
-    <div class="reviews-track" id="reviewsTrack"></div>
+    <div class="hscroll-track reviews-track" id="reviewsTrack"></div>
   </div>
 </section>
 
@@ -687,33 +689,28 @@
            '</figure>';
   }
 
-  /* ---------- Carrousel d'avis : avance lente + contrôle manuel ----------
-     Trois copies de la série sont posées côte à côte. On maintient la position
-     dans la copie du milieu : il reste donc toujours une série entière de marge
-     de chaque côté, ce qui permet de remonter en arrière indéfiniment.
-     L'avance automatique se coupe dès que l'utilisateur touche, et repart
-     5 secondes après sa dernière action. */
-  var scroller = document.getElementById('reviewsScroller');
-  var piste = document.getElementById('reviewsTrack');
+  /* ---------- Bandeaux défilants : avance lente + contrôle manuel ----------
+     Trois copies de la série sont posées côte à côte et la position est
+     maintenue dans celle du milieu : il reste toujours une série entière de
+     marge de chaque côté, donc on peut remonter en arrière indéfiniment.
+     L'avance automatique se coupe dès que l'utilisateur touche le bandeau,
+     et repart après un délai d'inactivité. */
+  function creerCarrousel(scroller, piste, parCopie, options){
+    if(!scroller || !piste || !parCopie) return;
+    options = options || {};
+    var VITESSE = options.vitesse || 24;    // pixels par seconde
+    var REPRISE = options.reprise || 5000;  // inactivité avant reprise, en ms
 
-  if(scroller && piste){
-    var VITESSE = 24;      // pixels par seconde — défilement lent
-    var REPRISE = 5000;    // délai d'inactivité avant reprise, en millisecondes
-
-    piste.innerHTML = AVIS.map(function(a){ return carteAvis(a, false); }).join('') +
-                      AVIS.map(function(a){ return carteAvis(a, true); }).join('') +
-                      AVIS.map(function(a){ return carteAvis(a, true); }).join('');
-
-    var serie = 0;                 // largeur d'une série, recalculée au besoin
+    var periode = 0;   // largeur exacte d'une répétition
     var auto = true;
-    var attendu = 0;               // position que nous avons nous-mêmes écrite
+    var attendu = 0;   // dernière position que nous avons nous-mêmes écrite
     var minuteur = null;
     var glisse = false, departX = 0, departScroll = 0;
 
     /* Position maintenue en décimal côté JavaScript. Indispensable : à 24 px/s
-       une image n'avance que de 0,4 px, or iOS Safari arrondit scrollLeft à
-       l'entier. Un « scrollLeft += 0,4 » relirait donc la valeur arrondie et
-       l'incrément serait perdu à chaque image — le carrousel resterait figé. */
+       une image n'avance que de 0,4 px, or Safari iOS arrondit scrollLeft à
+       l'entier. Un « scrollLeft += 0,4 » relirait la valeur arrondie et
+       l'incrément serait perdu à chaque image — le bandeau resterait figé. */
     var position = 0;
 
     function resynchroniser(){
@@ -721,18 +718,30 @@
       attendu  = scroller.scrollLeft;
     }
 
+    /* La période se mesure entre le premier élément d'une copie et celui de la
+       copie suivante. La déduire de scrollWidth / 3 serait faux : l'espacement
+       qui sépare deux copies s'ajoute à la largeur des éléments, et l'écart
+       — 23 px pour les logos — produisait un sursaut visible à chaque tour. */
     function mesurer(){
-      serie = piste.scrollWidth / 3;
-      if(serie > 0 && scroller.scrollLeft < 1){
-        scroller.scrollLeft = serie;   // on démarre dans la copie du milieu
+      var enfants = piste.children;
+      periode = (enfants.length > parCopie)
+        ? enfants[parCopie].offsetLeft - enfants[0].offsetLeft
+        : 0;
+      if(periode > 0){
+        // On se replace dans la copie du milieu en conservant l'avancement
+        // relatif. Les copies étant identiques, le déplacement est invisible.
+        // Indispensable après le chargement des images : la première mesure
+        // se fait sur des logos sans dimensions, donc sur une période fausse.
+        var p = scroller.scrollLeft;
+        scroller.scrollLeft = periode + ((p % periode) + periode) % periode;
       }
       resynchroniser();
     }
 
     function reboucler(){
-      if(serie <= 0) return;
-      if(scroller.scrollLeft >= serie * 2)       scroller.scrollLeft -= serie;
-      else if(scroller.scrollLeft < serie * 0.5) scroller.scrollLeft += serie;
+      if(periode <= 0) return;
+      if(scroller.scrollLeft >= periode * 2)        scroller.scrollLeft -= periode;
+      else if(scroller.scrollLeft < periode * 0.5)  scroller.scrollLeft += periode;
       else return;
       resynchroniser();
     }
@@ -743,7 +752,6 @@
       minuteur = setTimeout(function(){ auto = true; }, REPRISE);
     }
 
-    // L'utilisateur touche, glisse ou utilise la molette : on suspend
     scroller.addEventListener('pointerdown', function(e){
       suspendre();
       if(e.pointerType !== 'mouse') return;   // le tactile est géré nativement
@@ -768,9 +776,8 @@
     });
     scroller.addEventListener('wheel', suspendre, {passive:true});
 
-    // Défilement natif (doigt, trackpad, inertie) : écart avec notre position.
-    // Le rebouclage attend l'arrêt complet du défilement : le faire pendant
-    // l'inertie couperait l'élan sur iOS.
+    /* Défilement natif (doigt, trackpad, inertie). Le rebouclage attend l'arrêt
+       complet : le faire pendant l'inertie couperait l'élan sur iOS. */
     var finDeScroll = null;
     scroller.addEventListener('scroll', function(){
       if(Math.abs(scroller.scrollLeft - attendu) > 2){
@@ -787,7 +794,6 @@
       }, 140);
     }, {passive:true});
 
-    // Navigation au clavier
     scroller.addEventListener('keydown', function(e){
       if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       suspendre();
@@ -801,11 +807,10 @@
     var precedent = 0;
     function image(ts){
       if(!precedent) precedent = ts;
-      // Écart borné à 50 ms : après un retour d'onglet ou une image sautée,
-      // le carrousel reprend en douceur au lieu de bondir.
+      // Écart borné à 50 ms : après un retour d'onglet, reprise en douceur.
       var ecoule = Math.min((ts - precedent) / 1000, 0.05);
       precedent = ts;
-      if(auto && !glisse && !reduit.matches){
+      if(auto && !glisse && !reduit.matches && periode > 0){
         position += VITESSE * ecoule;      // accumulation en décimal
         scroller.scrollLeft = position;    // le navigateur peut arrondir, sans perte
         attendu = scroller.scrollLeft;
@@ -816,16 +821,33 @@
 
     mesurer();
     window.addEventListener('resize', mesurer);
+    // Les images des logos peuvent arriver après : on remesure une fois chargées.
+    window.addEventListener('load', mesurer);
     requestAnimationFrame(image);
   }
 
-  /* Duplication du bandeau de logos, qui reste en animation CSS */
-  [].forEach.call(document.querySelectorAll('.marquee-track'), function(track){
-    [].slice.call(track.children).forEach(function(node){
-      var copy = node.cloneNode(true);
-      copy.setAttribute('aria-hidden', 'true');
-      track.appendChild(copy);
-    });
-  });
+  /* --- Avis : la série est générée, puis triplée --- */
+  var reviewsTrack = document.getElementById('reviewsTrack');
+  if(reviewsTrack){
+    reviewsTrack.innerHTML =
+      AVIS.map(function(a){ return carteAvis(a, false); }).join('') +
+      AVIS.map(function(a){ return carteAvis(a, true);  }).join('') +
+      AVIS.map(function(a){ return carteAvis(a, true);  }).join('');
+    creerCarrousel(document.getElementById('reviewsScroller'), reviewsTrack, AVIS.length);
+  }
+
+  /* --- Logos : la série est déjà dans le HTML, on la triple --- */
+  var logosTrack = document.getElementById('logosTrack');
+  if(logosTrack){
+    var originaux = [].slice.call(logosTrack.children);
+    for(var c = 0; c < 2; c++){
+      originaux.forEach(function(node){
+        var copie = node.cloneNode(true);
+        copie.setAttribute('aria-hidden', 'true');
+        logosTrack.appendChild(copie);
+      });
+    }
+    creerCarrousel(document.getElementById('logosScroller'), logosTrack, originaux.length);
+  }
 })();
 </script>
