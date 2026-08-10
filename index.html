@@ -710,18 +710,31 @@
     var minuteur = null;
     var glisse = false, departX = 0, departScroll = 0;
 
+    /* Position maintenue en décimal côté JavaScript. Indispensable : à 24 px/s
+       une image n'avance que de 0,4 px, or iOS Safari arrondit scrollLeft à
+       l'entier. Un « scrollLeft += 0,4 » relirait donc la valeur arrondie et
+       l'incrément serait perdu à chaque image — le carrousel resterait figé. */
+    var position = 0;
+
+    function resynchroniser(){
+      position = scroller.scrollLeft;
+      attendu  = scroller.scrollLeft;
+    }
+
     function mesurer(){
       serie = piste.scrollWidth / 3;
       if(serie > 0 && scroller.scrollLeft < 1){
         scroller.scrollLeft = serie;   // on démarre dans la copie du milieu
-        attendu = scroller.scrollLeft;
       }
+      resynchroniser();
     }
 
     function reboucler(){
       if(serie <= 0) return;
-      if(scroller.scrollLeft >= serie * 2)      scroller.scrollLeft -= serie;
+      if(scroller.scrollLeft >= serie * 2)       scroller.scrollLeft -= serie;
       else if(scroller.scrollLeft < serie * 0.5) scroller.scrollLeft += serie;
+      else return;
+      resynchroniser();
     }
 
     function suspendre(){
@@ -744,8 +757,8 @@
     scroller.addEventListener('pointermove', function(e){
       if(!glisse) return;
       scroller.scrollLeft = departScroll - (e.clientX - departX);
+      resynchroniser();
       reboucler();
-      attendu = scroller.scrollLeft;
     });
     ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
       scroller.addEventListener(ev, function(){
@@ -760,13 +773,17 @@
     // l'inertie couperait l'élan sur iOS.
     var finDeScroll = null;
     scroller.addEventListener('scroll', function(){
-      if(Math.abs(scroller.scrollLeft - attendu) > 2) suspendre();
-      attendu = scroller.scrollLeft;
+      if(Math.abs(scroller.scrollLeft - attendu) > 2){
+        suspendre();
+        resynchroniser();
+      } else {
+        attendu = scroller.scrollLeft;
+      }
       clearTimeout(finDeScroll);
       finDeScroll = setTimeout(function(){
         if(glisse) return;
+        resynchroniser();
         reboucler();
-        attendu = scroller.scrollLeft;
       }, 140);
     }, {passive:true});
 
@@ -775,8 +792,8 @@
       if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       suspendre();
       scroller.scrollLeft += (e.key === 'ArrowRight' ? 1 : -1) * 340;
+      resynchroniser();
       reboucler();
-      attendu = scroller.scrollLeft;
       e.preventDefault();
     });
 
@@ -789,9 +806,10 @@
       var ecoule = Math.min((ts - precedent) / 1000, 0.05);
       precedent = ts;
       if(auto && !glisse && !reduit.matches){
-        scroller.scrollLeft += VITESSE * ecoule;
-        reboucler();
+        position += VITESSE * ecoule;      // accumulation en décimal
+        scroller.scrollLeft = position;    // le navigateur peut arrondir, sans perte
         attendu = scroller.scrollLeft;
+        reboucler();
       }
       requestAnimationFrame(image);
     }
