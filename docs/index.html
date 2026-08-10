@@ -192,22 +192,20 @@
   .buy-toast{position:fixed;left:16px;bottom:16px;z-index:55;width:min(330px, calc(100vw - 32px));
     background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;
     box-shadow:0 12px 32px -10px rgba(16,35,60,0.28);padding:12px 13px;display:flex;gap:11px;
-    align-items:flex-start;opacity:0;transform:translateX(-120%);
+    align-items:center;opacity:0;transform:translateX(-120%);
     transition:transform .38s cubic-bezier(.22,.9,.3,1), opacity .28s ease;
     touch-action:pan-y;cursor:grab;}
   .buy-toast.is-visible{opacity:1;transform:translateX(0);}
   .buy-toast.is-dragging{transition:none;cursor:grabbing;}
-  .buy-toast .bt-av{width:36px;height:36px;border-radius:50%;background:var(--brass);color:#fff;
-    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex:none;}
-  .buy-toast .bt-body{min-width:0;flex:1;line-height:1.35;}
-  .buy-toast .bt-nom{font-size:0.86rem;font-weight:700;color:var(--ink);
+  .buy-toast .bt-av{width:40px;height:40px;border-radius:8px;background:var(--brass);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.86rem;flex:none;}
+  .buy-toast .bt-body{min-width:0;flex:1;line-height:1.3;}
+  .buy-toast .bt-l1{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .buy-toast .bt-nom{font-size:0.92rem;font-weight:700;color:var(--ink);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .buy-toast .bt-lieu{font-size:0.75rem;color:var(--ink-soft);}
-  .buy-toast .bt-cmd{font-size:0.78rem;color:var(--ink);margin-top:3px;
+  .buy-toast .bt-quand{font-size:0.76rem;color:var(--ink-soft);white-space:nowrap;flex:none;}
+  .buy-toast .bt-cmd{font-size:0.8rem;color:var(--ink-soft);margin-top:2px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .buy-toast .bt-bas{display:flex;align-items:baseline;gap:8px;margin-top:3px;}
-  .buy-toast .bt-prix{font-size:0.86rem;font-weight:700;color:var(--brass-deep);}
-  .buy-toast .bt-quand{font-size:0.72rem;color:var(--ink-soft);}
   .buy-toast .bt-x{flex:none;width:22px;height:22px;border:none;background:transparent;
     color:var(--ink-soft);cursor:pointer;font-size:1.1rem;line-height:1;padding:0;border-radius:4px;}
   .buy-toast .bt-x:hover{background:var(--paper);color:var(--ink);}
@@ -596,10 +594,11 @@
 <div class="buy-toast" id="buyToast" hidden>
   <span class="bt-av" id="btAv" aria-hidden="true"></span>
   <div class="bt-body">
-    <div class="bt-nom" id="btNom"></div>
-    <div class="bt-lieu" id="btLieu"></div>
+    <div class="bt-l1">
+      <span class="bt-nom" id="btNom"></span>
+      <span class="bt-quand" id="btQuand"></span>
+    </div>
     <div class="bt-cmd" id="btCmd"></div>
-    <div class="bt-bas"><span class="bt-prix" id="btPrix"></span><span class="bt-quand" id="btQuand"></span></div>
   </div>
   <button class="bt-x" id="btX" type="button" aria-label="Masquer cette notification">×</button>
 </div>
@@ -1033,11 +1032,15 @@
     var enCommande = false;
     var dossierEl = document.getElementById('dossier');
     if(dossierEl){
+      // Uniquement le focus reel sur un champ, jamais un simple pointerdown :
+      // sur mobile le premier geste de defilement touche forcement cette carte,
+      // ce qui suspendait les notifications definitivement.
       dossierEl.addEventListener('focusin', function(){ enCommande = true; masquer(); });
       dossierEl.addEventListener('focusout', function(){
-        setTimeout(function(){ if(!dossierEl.contains(document.activeElement)) enCommande = false; }, 200);
+        setTimeout(function(){ if(!dossierEl.contains(document.activeElement)) enCommande = false; }, 300);
       });
-      dossierEl.addEventListener('pointerdown', function(){ enCommande = true; masquer(); });
+      var fi = document.getElementById('fileInput');
+      if(fi) fi.addEventListener('change', function(){ enCommande = true; masquer(); });
     }
 
     function masquer(){
@@ -1059,20 +1062,20 @@
 
     function afficher(){
       if(refus >= 2) return;
-      if(enCommande || document.hidden){
+      // Pas de garde sur document.hidden : certains contextes d'affichage se
+      // declarent masques tout en etant visibles, ce qui bloquait tout.
+      if(enCommande){
         timerSuivant = setTimeout(afficher, INTERVALLE);
         return;
       }
       var parts = ACHETEURS[ordre[curseur % ordre.length]].split('|');
       curseur++;
-      var nom = casse(parts[0], curseur), ville = parts[1], pays = parts[2];
+      var nom = casse(parts[0], curseur), pays = parts[2];
       var cmd = TIRAGE[Math.floor(Math.random() * TIRAGE.length)];
 
       document.getElementById('btAv').textContent  = parts[0].charAt(0).toUpperCase();
       document.getElementById('btNom').textContent = nom;
-      document.getElementById('btLieu').textContent= ville + ', ' + (PAYS[pays] || pays);
-      document.getElementById('btCmd').textContent = cmd[0] + ' documents · ' + cmd[1];
-      document.getElementById('btPrix').textContent= montant(cmd[0], pays);
+      document.getElementById('btCmd').textContent = cmd[0] + ' documents · ' + montant(cmd[0], pays);
       document.getElementById('btQuand').textContent = ilYA();
 
       toast.hidden = false;
