@@ -178,6 +178,32 @@
     .compare-head h3{font-size:0.98rem;}
   }
 
+  /* ---------- NOTIFICATION D'ACHAT (démonstration) ---------- */
+  .buy-toast{position:fixed;left:16px;bottom:16px;z-index:55;width:min(330px, calc(100vw - 32px));
+    background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;
+    box-shadow:0 12px 32px -10px rgba(16,35,60,0.28);padding:12px 13px;display:flex;gap:11px;
+    align-items:flex-start;opacity:0;transform:translateX(-120%);
+    transition:transform .38s cubic-bezier(.22,.9,.3,1), opacity .28s ease;
+    touch-action:pan-y;cursor:grab;}
+  .buy-toast.is-visible{opacity:1;transform:translateX(0);}
+  .buy-toast.is-dragging{transition:none;cursor:grabbing;}
+  .buy-toast .bt-av{width:36px;height:36px;border-radius:50%;background:var(--brass);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;flex:none;}
+  .buy-toast .bt-body{min-width:0;flex:1;line-height:1.35;}
+  .buy-toast .bt-nom{font-size:0.86rem;font-weight:700;color:var(--ink);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .buy-toast .bt-lieu{font-size:0.75rem;color:var(--ink-soft);}
+  .buy-toast .bt-cmd{font-size:0.78rem;color:var(--ink);margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .buy-toast .bt-bas{display:flex;align-items:baseline;gap:8px;margin-top:3px;}
+  .buy-toast .bt-prix{font-size:0.86rem;font-weight:700;color:var(--brass-deep);}
+  .buy-toast .bt-quand{font-size:0.72rem;color:var(--ink-soft);}
+  .buy-toast .bt-x{flex:none;width:22px;height:22px;border:none;background:transparent;
+    color:var(--ink-soft);cursor:pointer;font-size:1.1rem;line-height:1;padding:0;border-radius:4px;}
+  .buy-toast .bt-x:hover{background:var(--paper);color:var(--ink);}
+  @media (max-width:940px){ .buy-toast{bottom:96px;} }  /* au-dessus de la barre CTA */
+  @media (prefers-reduced-motion: reduce){ .buy-toast{transition:opacity .2s ease;transform:none;} }
+
   /* ---------- BARRE CTA COLLANTE (mobile) ---------- */
   .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;align-items:center;justify-content:space-between;gap:14px;
     background:var(--paper-raised);border-top:1px solid var(--rule);padding:11px 18px calc(11px + env(safe-area-inset-bottom));
@@ -554,6 +580,20 @@
   </div>
 </section>
 
+<!-- Notification d'achat — CONTENU DE DÉMONSTRATION.
+     Les 200 acheteurs sont fictifs (tableau ACHETEURS en bas de page).
+     À brancher sur les vraies commandes avant toute mise en ligne. -->
+<div class="buy-toast" id="buyToast" hidden>
+  <span class="bt-av" id="btAv" aria-hidden="true"></span>
+  <div class="bt-body">
+    <div class="bt-nom" id="btNom"></div>
+    <div class="bt-lieu" id="btLieu"></div>
+    <div class="bt-cmd" id="btCmd"></div>
+    <div class="bt-bas"><span class="bt-prix" id="btPrix"></span><span class="bt-quand" id="btQuand"></span></div>
+  </div>
+  <button class="bt-x" id="btX" type="button" aria-label="Masquer cette notification">×</button>
+</div>
+
 <div class="sticky-cta" id="stickyCta">
   <div>
     <span class="sp-amount tabular">25&nbsp;€</span>
@@ -864,6 +904,207 @@
       });
     }
     creerCarrousel(document.getElementById('logosScroller'), logosTrack, originaux.length);
+  }
+
+  /* ============================================================
+     NOTIFICATION D'ACHAT — CONTENU DE DÉMONSTRATION À REMPLACER
+     200 acheteurs fictifs. Format : "Prénom I.|Ville|Pays".
+     La casse est volontairement irrégulière à l'affichage : de vrais
+     inscrits saisissent leur nom en majuscules, en minuscules ou mélangé.
+     ============================================================ */
+  var ACHETEURS = ("Camille D.|Toulouse|FR;Karim B.|Marseille|FR;Élodie R.|Nantes|FR;Thomas D.|Lyon|FR;"+
+  "Naïma S.|Lille|FR;Vincent L.|Bordeaux|FR;Fatou D.|Paris|FR;Marc-Antoine P.|Rennes|FR;"+
+  "Leïla H.|Montpellier|FR;Julien F.|Strasbourg|FR;Amandine C.|Grenoble|FR;Sofiane B.|Nice|FR;"+
+  "Claire M.|Dijon|FR;Hugo T.|Angers|FR;Inès A.|Toulon|FR;Mathieu G.|Le Havre|FR;"+
+  "Sarah K.|Reims|FR;Antoine V.|Clermont-Ferrand|FR;Yasmine O.|Saint-Étienne|FR;Pierre N.|Brest|FR;"+
+  "Manon L.|Tours|FR;Nicolas E.|Limoges|FR;Aïcha M.|Amiens|FR;Guillaume R.|Metz|FR;"+
+  "Chloé B.|Besançon|FR;Adrien S.|Perpignan|FR;Nadia T.|Orléans|FR;Romain C.|Mulhouse|FR;"+
+  "Émilie P.|Caen|FR;Kevin A.|Nancy|FR;Salma R.|Argenteuil|FR;Benoît D.|Rouen|FR;"+
+  "Laura F.|Montreuil|FR;Mehdi Z.|Nanterre|FR;Céline V.|Avignon|FR;Alexandre M.|Poitiers|FR;"+
+  "Lucie G.|Versailles|FR;Rachid E.|Créteil|FR;Pauline H.|Pau|FR;Maxime B.|La Rochelle|FR;"+
+  "Nour B.|Colombes|FR;Damien L.|Vitry-sur-Seine|FR;Sabrina M.|Aubervilliers|FR;Olivier T.|Asnières|FR;"+
+  "Jade R.|Courbevoie|FR;Théo P.|Cergy|FR;Myriam L.|Saint-Denis|FR;Baptiste N.|Calais|FR;"+
+  "Anaïs D.|Béziers|FR;Samir K.|Vénissieux|FR;Justine C.|Quimper|FR;Florian M.|Valence|FR;"+
+  "Assia B.|Antibes|FR;Clément V.|Chambéry|FR;Marine S.|Lorient|FR;Walid H.|Roubaix|FR;"+
+  "Océane G.|Troyes|FR;Raphaël D.|Niort|FR;Hanane A.|Tourcoing|FR;Quentin B.|Annecy|FR;"+
+  "Sonia L.|Montauban|FR;Arthur F.|Saint-Nazaire|FR;Dounia M.|Évry|FR;Loïc P.|Bayonne|FR;"+
+  "Élise T.|Chartres|FR;Bilal S.|Sarcelles|FR;Camille V.|Belfort|FR;Nathan R.|Blois|FR;"+
+  "Imane C.|Meaux|FR;Gaëlle D.|Vannes|FR;Younes T.|Massy|FR;Charlotte B.|Beauvais|FR;"+
+  "Ismaël D.|Melun|FR;Audrey N.|Albi|FR;Farid L.|Villeurbanne|FR;Solène M.|Cholet|FR;"+
+  "Anis B.|Bobigny|FR;Margaux P.|Arras|FR;Zakaria E.|Drancy|FR;Estelle R.|Laval|FR;"+
+  "Hamza N.|Épinay|FR;Lucas D.|Bourges|FR;Rania S.|Antony|FR;Victor M.|Ajaccio|FR;"+
+  "Amine T.|Clichy|FR;Noémie L.|Saint-Malo|FR;Khadija B.|Aulnay|FR;Simon G.|Périgueux|FR;"+
+  "Meriem A.|Nîmes|FR;Baptiste R.|Agen|FR;Sofia L.|Levallois|FR;Corentin V.|Vichy|FR;"+
+  "Assma K.|Garges|FR;Étienne B.|Auxerre|FR;Lina M.|Ivry|FR;Paul-Henri D.|Compiègne|FR;"+
+  "Djamila R.|Montfermeil|FR;Grégoire T.|Saumur|FR;Wassim B.|Pantin|FR;Alice C.|Angoulême|FR;"+
+  "Youssef E.|Casablanca|MA;Salma B.|Rabat|MA;Mehdi A.|Marrakech|MA;Imane T.|Tanger|MA;"+
+  "Othmane R.|Fès|MA;Kenza L.|Agadir|MA;Anas M.|Meknès|MA;Ghita B.|Oujda|MA;"+
+  "Reda S.|Kénitra|MA;Nisrine H.|Tétouan|MA;Ayoub K.|Salé|MA;Hajar Z.|Mohammédia|MA;"+
+  "Zineb A.|El Jadida|MA;Ilyas B.|Nador|MA;Soukaina M.|Safi|MA;Badr T.|Béni Mellal|MA;"+
+  "Amine L.|Alger|DZ;Lydia B.|Oran|DZ;Sofiane M.|Constantine|DZ;Nesrine A.|Annaba|DZ;"+
+  "Yacine K.|Blida|DZ;Meriem T.|Sétif|DZ;Riad H.|Tlemcen|DZ;Amel S.|Béjaïa|DZ;"+
+  "Karim Z.|Batna|DZ;Sabrina D.|Tizi Ouzou|DZ;Farid B.|Sidi Bel Abbès|DZ;Naïla M.|Mostaganem|DZ;"+
+  "Nizar B.|Tunis|TN;Emna S.|Sfax|TN;Skander M.|Sousse|TN;Rim T.|Bizerte|TN;"+
+  "Aymen L.|Kairouan|TN;Ines B.|Gabès|TN;Malek H.|Monastir|TN;Dorra K.|Nabeul|TN;"+
+  "Hatem A.|Ariana|TN;Yosra M.|La Marsa|TN;Chaima R.|Médenine|TN;Bilel N.|Gafsa|TN;"+
+  "Marie-Ange L.|Bruxelles|BE;Thibault V.|Liège|BE;Sophie D.|Anvers|BE;Maxence B.|Charleroi|BE;"+
+  "Aurélie J.|Gand|BE;Nabil E.|Molenbeek|BE;Florence M.|Namur|BE;Jérôme C.|Bruges|BE;"+
+  "Céline W.|Louvain|BE;Dimitri P.|Mons|BE;Fanny R.|Tournai|BE;Ahmed B.|Schaerbeek|BE;"+
+  "Loïc B.|Genève|CH;Andrea S.|Lausanne|CH;Nicolas H.|Zurich|CH;Valérie M.|Fribourg|CH;"+
+  "Julien R.|Neuchâtel|CH;Sandra K.|Sion|CH;Patrick B.|Bâle|CH;Laetitia D.|Montreux|CH;"+
+  "Fabio C.|Lugano|CH;Noémie A.|Yverdon|CH;Stéphane T.|Vevey|CH;Carole G.|Nyon|CH;"+
+  "Marie-Ève T.|Montréal|CA;Samuel L.|Québec|CA;Andréanne G.|Laval|CA;Jean-Philippe R.|Gatineau|CA;"+
+  "Catherine B.|Sherbrooke|CA;Olivier D.|Longueuil|CA;Frédérique M.|Trois-Rivières|CA;Mathieu C.|Ottawa|CA;"+
+  "Sarah-Jeanne P.|Saguenay|CA;Vincent H.|Lévis|CA;Camille B.|Terrebonne|CA;Karim A.|Brossard|CA;"+
+  "Élodie N.|Toronto|CA;Antoine G.|Drummondville|CA;Rosalie F.|Granby|CA;"+
+  "Aminata D.|Dakar|SN;Ousmane F.|Thiès|SN;Mariama S.|Saint-Louis|SN;Cheikh N.|Ziguinchor|SN;"+
+  "Kouassi A.|Abidjan|CI;Aya K.|Yamoussoukro|CI;Ibrahim T.|Bouaké|CI;Nadège B.|Cocody|CI;"+
+  "Emma W.|Londres|GB;Oliver H.|Manchester|GB;Sofía G.|Madrid|ES;Álvaro M.|Barcelone|ES;"+
+  "Giulia R.|Milan|IT;Lorenzo B.|Rome|IT;Layla A.|Dubaï|AE;Omar S.|Abu Dhabi|AE").split(";");
+
+  // Prix unitaire par pays, équivalent d'environ 25 € par document.
+  var TARIFS = {
+    FR:['EUR',25], BE:['EUR',25], ES:['EUR',25], IT:['EUR',25],
+    CH:['CHF',24], GB:['GBP',21], CA:['CAD',37],
+    MA:['MAD',270], DZ:['DZD',3600], TN:['TND',84],
+    SN:['XOF',16400], CI:['XOF',16400], AE:['AED',99]
+  };
+  var PAYS = {FR:'France',BE:'Belgique',CH:'Suisse',CA:'Canada',MA:'Maroc',DZ:'Algérie',
+    TN:'Tunisie',SN:'Sénégal',CI:"Côte d'Ivoire",GB:'Royaume-Uni',ES:'Espagne',IT:'Italie',AE:'Émirats'};
+
+  /* Compositions de commande, pondérées : l'essentiel des dossiers couvre
+     4 à 6 années d'études, quelques-uns une seule année. */
+  var COMMANDES = [
+    [12,'4 ans · trimestres',5], [8,'4 ans · semestres',5],
+    [15,'5 ans · trimestres',4], [10,'5 ans · semestres',3],
+    [18,'6 ans · trimestres',2], [12,'6 ans · semestres',2],
+    [13,'4 ans + université',3],   [16,'5 ans + université',2],
+    [9,'3 ans · trimestres',3],  [6,'3 ans · semestres',2],
+    [3,'1 an · trimestres',1],   [2,'1 an · semestres',1]
+  ];
+  var TIRAGE = [];
+  COMMANDES.forEach(function(c){ for(var i=0;i<c[2];i++) TIRAGE.push(c); });
+
+  function montant(n, pays){
+    var t = TARIFS[pays] || TARIFS.FR;
+    var total = n * t[1];
+    var arrondi = (t[0]==='MAD'||t[0]==='DZD'||t[0]==='XOF') ? 0 : 0;
+    return total.toLocaleString('fr-FR',{minimumFractionDigits:arrondi,maximumFractionDigits:arrondi}) + ' ' +
+           ({EUR:'€',CHF:'CHF',GBP:'£',CAD:'$ CA',MAD:'MAD',DZD:'DA',TND:'DT',XOF:'FCFA',AED:'AED'}[t[0]]);
+  }
+  function casse(nom, i){
+    if(i % 7 === 0) return nom.toUpperCase();
+    if(i % 11 === 0) return nom.toLowerCase();
+    return nom;
+  }
+  function ilYA(){
+    var m = 2 + Math.floor(Math.random()*180);
+    if(m < 60) return 'il y a ' + m + ' min';
+    var h = Math.round(m/60);
+    return 'il y a ' + h + (h > 1 ? ' heures' : ' heure');
+  }
+
+  var toast = document.getElementById('buyToast');
+  if(toast && ACHETEURS.length){
+    var CLE_REFUS = 'protranslayte:achats-refuses';
+    var refus = parseInt(localStorage.getItem(CLE_REFUS) || '0', 10);
+    var PREMIER = 8000, INTERVALLE = 30000, DUREE = 6500;
+    var visible = false, timerMasque = null, timerSuivant = null, ordre = [], curseur = 0;
+
+    // ordre aléatoire, sans répétition avant d'avoir fait le tour
+    ACHETEURS.forEach(function(_, i){ ordre.push(i); });
+    for(var i = ordre.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = ordre[i]; ordre[i] = ordre[j]; ordre[j] = tmp;
+    }
+
+    // Suspendu pendant que le visiteur remplit sa commande : il est déjà en
+    // train de convertir, une notification ne ferait que le distraire.
+    var enCommande = false;
+    var dossierEl = document.getElementById('dossier');
+    if(dossierEl){
+      dossierEl.addEventListener('focusin', function(){ enCommande = true; masquer(); });
+      dossierEl.addEventListener('focusout', function(){
+        setTimeout(function(){ if(!dossierEl.contains(document.activeElement)) enCommande = false; }, 200);
+      });
+      dossierEl.addEventListener('pointerdown', function(){ enCommande = true; masquer(); });
+    }
+
+    function masquer(){
+      if(!visible) return;
+      visible = false;
+      toast.classList.remove('is-visible');
+      clearTimeout(timerMasque);
+      setTimeout(function(){ if(!visible) toast.hidden = true; }, 400);
+    }
+
+    function refuser(){
+      refus++;
+      try { localStorage.setItem(CLE_REFUS, String(refus)); } catch(e){}
+      masquer();
+      clearTimeout(timerSuivant);
+      // Deux refus : le visiteur a clairement signifié qu'il n'en veut pas.
+      if(refus < 2) timerSuivant = setTimeout(afficher, INTERVALLE);
+    }
+
+    function afficher(){
+      if(refus >= 2) return;
+      if(enCommande || document.hidden){
+        timerSuivant = setTimeout(afficher, INTERVALLE);
+        return;
+      }
+      var parts = ACHETEURS[ordre[curseur % ordre.length]].split('|');
+      curseur++;
+      var nom = casse(parts[0], curseur), ville = parts[1], pays = parts[2];
+      var cmd = TIRAGE[Math.floor(Math.random() * TIRAGE.length)];
+
+      document.getElementById('btAv').textContent  = parts[0].charAt(0).toUpperCase();
+      document.getElementById('btNom').textContent = nom;
+      document.getElementById('btLieu').textContent= ville + ', ' + (PAYS[pays] || pays);
+      document.getElementById('btCmd').textContent = cmd[0] + ' documents · ' + cmd[1];
+      document.getElementById('btPrix').textContent= montant(cmd[0], pays);
+      document.getElementById('btQuand').textContent = ilYA();
+
+      toast.hidden = false;
+      toast.style.transform = '';
+      void toast.offsetWidth;                 // force le recalcul avant l'animation
+      toast.classList.add('is-visible');
+      visible = true;
+      timerMasque = setTimeout(masquer, DUREE);
+      timerSuivant = setTimeout(afficher, INTERVALLE);
+    }
+
+    document.getElementById('btX').addEventListener('click', refuser);
+
+    // Balayage vers la gauche pour écarter
+    var gx = 0, gy = 0, gGlisse = false, gAxe = null;
+    toast.addEventListener('pointerdown', function(e){
+      if(e.target.id === 'btX') return;
+      gx = e.clientX; gy = e.clientY; gGlisse = true; gAxe = null;
+      toast.classList.add('is-dragging');
+    });
+    toast.addEventListener('pointermove', function(e){
+      if(!gGlisse) return;
+      var dx = e.clientX - gx, dy = e.clientY - gy;
+      if(!gAxe && (Math.abs(dx) > 6 || Math.abs(dy) > 6)){
+        gAxe = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      }
+      if(gAxe !== 'x') return;               // geste vertical : on laisse défiler la page
+      toast.style.transform = 'translateX(' + Math.min(0, dx) + 'px)';
+      toast.style.opacity = String(Math.max(0, 1 + dx / 200));
+    });
+    ['pointerup','pointercancel'].forEach(function(ev){
+      toast.addEventListener(ev, function(e){
+        if(!gGlisse) return;
+        gGlisse = false;
+        toast.classList.remove('is-dragging');
+        toast.style.opacity = '';
+        if(gAxe === 'x' && (e.clientX - gx) < -60){ toast.style.transform = ''; refuser(); }
+        else { toast.style.transform = ''; }
+      });
+    });
+
+    if(refus < 2) timerSuivant = setTimeout(afficher, PREMIER);
   }
 })();
 </script>
