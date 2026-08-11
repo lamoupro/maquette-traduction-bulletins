@@ -149,7 +149,10 @@
   .doc-base{width:100%;height:100%;object-fit:cover;}
   .doc-clip{position:absolute;top:0;left:0;height:100%;width:var(--pos);overflow:hidden;}
   .doc-clip img{position:absolute;top:0;left:0;height:100%;width:auto;max-width:none;}
-  .doc-tag{position:absolute;top:10px;font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;border-radius:3px;z-index:3;}
+  /* Pas de z-index : chaque etiquette doit rester DANS sa couche pour que
+     le document du dessus puisse la recouvrir. Un z-index la ferait peindre
+     au-dessus du decoupage et elle ne disparaitrait jamais. */
+  .doc-tag{position:absolute;top:10px;font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;padding:4px 8px;border-radius:3px;}
   .doc-tag.fr{left:10px;background:#EDF1F7;color:#44536B;}
   .doc-tag.en{right:10px;background:var(--verified-tint);color:var(--verified);}
   .handle{position:absolute;top:0;bottom:0;left:var(--pos);width:0;z-index:5;transform:translateX(-50%);}
