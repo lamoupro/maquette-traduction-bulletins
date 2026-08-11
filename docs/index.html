@@ -301,10 +301,9 @@
   .review-stars{display:flex;gap:2px;}
   .review-stars svg{width:15px;height:15px;color:#E4A33B;}
   .review-text{font-size:0.91rem;line-height:1.5;color:var(--ink);margin:0;}
-  .review-meta{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:4px;}
+  .review-meta{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:6px;}
   .review-av{width:32px;height:32px;border-radius:50%;background:var(--brass-tint);color:var(--brass-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex:none;}
-  .review-name{font-size:0.86rem;font-weight:600;display:block;line-height:1.25;}
-  .review-ctx{font-size:0.74rem;color:var(--ink-soft);}
+  .review-name{font-size:0.88rem;font-weight:600;line-height:1.2;}
   @media (max-width:640px){
     .reviews{padding:38px 0 42px;}
     .review-card{width:270px;padding:16px 17px;}
@@ -775,30 +774,29 @@
        contexte = la démarche concernée
      ============================================================ */
   var AVIS = [
-    { texte:"Bulletin déposé le dimanche soir, traduction reçue le mardi matin. Dossier accepté sans une seule question.", nom:"Sabrina M.", contexte:"Inscription université, Canada" },
-    { texte:"Le prix fixe change tout : plus besoin d'attendre trois jours un devis pour savoir si je peux me lancer.", nom:"Karim B.", contexte:"Lycée international" },
-    { texte:"Les appréciations des professeurs sont traduites avec un vrai vocabulaire scolaire, pas du mot à mot.", nom:"Élodie R.", contexte:"Dossier Parcoursup" },
-    { texte:"Mise en page identique à l'original. L'université n'a eu aucune question à poser sur le document.", nom:"Thomas D.", contexte:"Échange Erasmus" },
-    { texte:"J'hésitais à envoyer les documents de ma fille. Fichiers supprimés après livraison, exactement comme annoncé.", nom:"Naïma S.", contexte:"Dossier de bourse" },
-    { texte:"Une coquille sur un nom de matière, signalée le matin, corrigée dans l'heure et sans frais.", nom:"Vincent L.", contexte:"Équivalence de diplôme" },
-    { texte:"Français vers anglais en 24 h, avec cachet et signature du traducteur assermenté sur chaque page.", nom:"Fatou D.", contexte:"Admission Royaume-Uni" },
-    { texte:"Trois bulletins d'un coup, même tarif par document, aucune surprise au moment de payer.", nom:"Marc-Antoine P.", contexte:"Dossier universitaire complet" },
-    { texte:"J'avais essayé un traducteur automatique avant : les moyennes étaient fausses. Ici tout était juste.", nom:"Leïla H.", contexte:"Inscription Espagne" },
-    { texte:"Réponse au téléphone en dix minutes pour une question de format. C'est rare aujourd'hui.", nom:"Julien F.", contexte:"Dossier d'inscription" },
-    { texte:"Le numéro d'agrément du traducteur est indiqué, l'établissement a pu le vérifier directement.", nom:"Amandine C.", contexte:"Admission Allemagne" },
-    { texte:"Commandé un jour férié, livré le lendemain. Je ne pensais pas tenir la date limite.", nom:"Sofiane B.", contexte:"Candidature tardive" }
+    { e:5, texte:"J\u2019avais besoin d\u2019un document en anglais ( inscription dans une universit\u00e9) avec une traduction certifi\u00e9e, j\u2019ai tout fait en ligne et command\u00e9 sans suppl\u00e9ment pour acc\u00e9l\u00e9rer la traduction vu que j\u2019avais le temps, c\u2019est arriv\u00e9 en 24 heures. Nickel", nom:"Caroline J." },
+    { e:5, texte:"traduction, ultrarapide, r\u00e9alis\u00e9e par un traducteur asserment\u00e9 (allemand -> fran\u00e7ais). \u00c0 recommander vivement.", nom:"Thomas W." },
+    { e:5, texte:"Travail professionnel, d\u00e9lai respecter. Merci", nom:"D." },
+    { e:5, texte:"Super, je suis ravie, je voulais les deux semestres de BTS traduit pour mon fils. Je pensais que \u00e7a allait prendre plusieurs jours mais au moins de 24 heures je l\u2019ai re\u00e7u.", nom:"sophie b." },
+    { e:5, texte:"Je recommande vivement!! C\u2019est la deuxi\u00e8me fois je compte sur eux pour des documents. La rapidit\u00e9 et la qualit\u00e9 de leurs services et 10/10", nom:"lorea a." },
+    { e:5, texte:"Protranslayte was useful when I needed a certified translation. The process felt simple, and the final document looked properly prepared.", nom:"Saif R." },
+    { e:4, texte:"I needed a translated document for personal use and Protranslayte handled it well. The result was clear and delivered faster than expected.", nom:"Dave A." },
+    { e:5, texte:"C\u2019est un service impeccable avec une traduction assermente parfaite et qui r\u00e9pond aux normes administratives. Bravo! Je recommande sans h\u00e9sitation.", nom:"Kristin C." },
+    { e:5, texte:"Je n\u2019aurai qu\u2019un seul mot \u00e0 vous dire: Merci, oui merci infiniment! Je devais d\u00e9panner un ami avec une traduction de derni\u00e8re minute et vous avez \u00e9t\u00e9 les seuls \u00e0 \u00eatre aussi bien sur le rapport qualit\u00e9 / prix / rapidit\u00e9. Je ne pense pas qu\u2019il y ait de traducteur sur le net, alors merci encore.", nom:"Olivier" },
+    { e:5, texte:"Je suis \u00e9tonnamment satisfaite de la rapidit\u00e9 de leur service de qualit\u00e9. J\u2019ai envoy\u00e9 mon document ce matin et il \u00e9tait disponible le m\u00eame jour \u00e0 18h. Ils sont tr\u00e8s \u00e0 l\u2019\u00e9coute. Prix raisonnable vraiment, je recommande fortement.", nom:"cliente" },
+    { e:5, texte:"J\u2019ai fait appel \u00e0 ce site pour la traduction en anglais de mon dipl\u00f4me et de mon bulletin. J\u2019ai re\u00e7u les documents tr\u00e8s rapidement avec une traduction de grande qualit\u00e9 fid\u00e8le \u00e0 l\u2019original et certifi\u00e9e. Le service est efficace et professionnel. Je suis pleinement satisfaite et je recommande vivement.", nom:"nour a." },
+    { e:4, texte:"Tr\u00e8s r\u00e9actif au niveau de la compr\u00e9hension de la demande et la r\u00e9ponse apport\u00e9e. Apr\u00e8s avoir re\u00e7u mon document dans un d\u00e9lais tr\u00e8s raisonnable, on peut toujours les contacter pour des pr\u00e9cisions et ils r\u00e9pondent tr\u00e8s vite.", nom:"Abdullah R." }
   ];
 
   var etoile = '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.6l2.5 5.1 5.6.8-4 4 .9 5.6L10 14.4l-5 2.7.9-5.6-4-4 5.6-.8z"/></svg>';
 
   function carteAvis(a, muet){
     return '<figure class="review-card"' + (muet ? ' aria-hidden="true"' : '') + '>' +
-             '<div class="review-stars" role="img" aria-label="5 étoiles sur 5">' + new Array(6).join(etoile) + '</div>' +
+             '<div class="review-stars" role="img" aria-label="' + a.e + ' étoiles sur 5">' + new Array(a.e + 1).join(etoile) + '</div>' +
              '<blockquote class="review-text">' + a.texte + '</blockquote>' +
              '<figcaption class="review-meta">' +
-               '<span class="review-av" aria-hidden="true">' + a.nom.charAt(0) + '</span>' +
-               '<span><span class="review-name">' + a.nom + '</span>' +
-               '<span class="review-ctx">' + a.contexte + '</span></span>' +
+               '<span class="review-av" aria-hidden="true">' + a.nom.charAt(0).toUpperCase() + '</span>' +
+               '<span class="review-name">' + a.nom + '</span>' +
              '</figcaption>' +
            '</figure>';
   }
