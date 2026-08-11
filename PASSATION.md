@@ -1,24 +1,22 @@
 # Note de passation — protranslayte
 
-Rédigée le 10 août 2026. À lire en premier avant toute reprise du projet.
+Mise à jour le 11 août 2026. À lire en premier avant toute reprise.
 
 ## Où en est le projet
 
 Maquette de landing page pour un service de traduction assermentée de bulletins
-de notes. Prix fixe 25 €, marché francophone. Pas encore de vrai site applicatif.
+de notes. Marché francophone.
 
 **En ligne :** https://lamoupro.github.io/maquette-traduction-bulletins/
 **Dépôt :** https://github.com/lamoupro/maquette-traduction-bulletins (public, `noindex`)
 
-### Structure
-
 ```
 site/
-├── index.html      ← LA SOURCE. C'est le seul fichier à éditer.
+├── index.html      ← LA SOURCE. Seul fichier à éditer.
 ├── build.js        ← génère les deux sorties
-├── assets/         ← logos ATA/ATC/Trackhouse + bulletins caviardés
+├── assets/         ← logos + bulletins caviardés
 ├── docs/           ← sortie web publiée par GitHub Pages (main, /docs)
-└── dist/index.html ← sortie artifact, images inlinées en data URI
+└── dist/index.html ← sortie artifact, images inlinées
 ```
 
 Après toute modification :
@@ -27,135 +25,129 @@ Après toute modification :
 cd /Users/macbook/xenderpc/site && node build.js && git add -A && git commit -m "..." && git push
 ```
 
-Le déploiement GitHub Pages prend 1 à 3 minutes. `gh` est installé dans
-`/usr/local/bin`, le compte `lamoupro` est authentifié, les permissions Bash
-nécessaires sont dans `.claude/settings.local.json`.
+Déploiement en 1 à 3 minutes. `gh` est dans `/usr/local/bin`, compte `lamoupro`
+authentifié, permissions Bash dans `.claude/settings.local.json`.
+
+**Toujours faire tester l'utilisateur sur son iPhone.** Le panneau de
+prévisualisation intégré est trompeur : il se déclare `document.hidden`, donc
+`requestAnimationFrame` n'y tourne jamais et le défilement de page n'y
+fonctionne pas. Trois faux diagnostics en sont venus. Les mesures via
+`getBoundingClientRect()` en JavaScript restent fiables, pas les captures.
 
 ---
 
-## LE BUG À TRAITER — comparateur avant/après
+## Tarification — décisions arrêtées
 
-**Statut : jamais traité.** L'utilisateur avait explicitement demandé de ne pas
-y toucher tant que la section avis n'était pas finie. Elle l'est maintenant.
+- **25 €** par document. **35 €** est le tarif réellement pratiqué auparavant
+  par l'utilisateur dans son activité de traduction : le prix barré est donc un
+  prix de référence **légitime** au sens de la directive Omnibus.
+- Ne pas descendre à 23 € : le marché français est à 35-65 € le document, les
+  concurrents à 25 € sont américains. La rapidité prime sur le prix dans les
+  avis.
+- **Offre d'août** : bandeau avec compte à rebours réel jusqu'au 31 août,
+  sans réinitialisation. Constantes `PRIX_NORMAL = 35` et `PRIX_OFFRE = 25`.
 
-### Symptôme, mot pour mot
-
-> « Quand je suis tout en haut de la page et que je scrolle, mon premier geste
-> fait remonter le avant-après d'un coup sous la section devis instantané.
-> Ensuite je peux scroller normalement sur le site. »
-
-Donc : un saut de mise en page au tout premier défilement, sur mobile, puis
-plus rien d'anormal ensuite.
-
-### Ce qui a DÉJÀ été corrigé sur ce composant (ne pas refaire)
-
-Un autre bug, distinct, où le document débordait de sa carte pendant le
-défilement. Cause : `clip-path` n'est pas repeint de façon fiable par Safari
-iOS. Remplacé par une découpe à conteneur de largeur variable
-(`.doc-clip { width: var(--pos); overflow: hidden }`), plus `contain: paint`
-et `isolation: isolate` sur `.compare`. `touch-action: none` a aussi été retiré
-de la zone du document — il bloquait le défilement vertical de la page.
-
-### Hypothèses sur la cause du saut, par ordre de vraisemblance
-
-1. **Ancrage du défilement / chargement tardif des images.** Les deux JPEG de
-   bulletins pèsent environ 230 Ko chacun. Ils arrivent après le premier rendu.
-   Safari iOS diffère souvent le reflux jusqu'au premier geste de défilement.
-   À vérifier en priorité : ajouter `width` et `height` explicites sur les
-   `<img>` du comparateur, ou tester `overflow-anchor: none` sur le conteneur.
-
-2. **`aspect-ratio: 1000/1417` sur `.compare`.** L'espace est bien réservé en
-   théorie, mais à confirmer sur appareil réel : mesurer la hauteur de
-   `.compare-card` avant et après chargement des images.
-
-3. **Barre d'adresse de Safari.** Elle se rétracte au premier défilement et
-   modifie la hauteur du viewport. Peu probable ici, aucune unité `vh` n'est
-   utilisée, mais à écarter formellement.
-
-### Méthode de diagnostic recommandée
-
-Le panneau de prévisualisation intégré est **inutilisable** pour ce bug : il
-rapporte `document.visibilityState === 'hidden'`, donc `requestAnimationFrame`
-n'y tourne jamais, et le défilement programmatique n'y fonctionne pas de façon
-fiable. Deux contournements possibles :
-
-- Mesurer les positions via `getBoundingClientRect()` en JavaScript plutôt que
-  se fier aux captures d'écran.
-- Faire tester l'utilisateur sur son iPhone : c'est le seul environnement où le
-  bug se manifeste.
+> ⚠️ **Au 1er septembre 2026**, le tarif doit réellement passer à 35 €, sinon
+> l'annonce devient trompeuse. Le bandeau disparaît tout seul, mais les prix
+> affichés restent à 25 € tant que `PRIX_OFFRE` n'est pas modifié.
 
 ---
 
-## Ce qui fonctionne et qu'il ne faut pas casser
+## Ce qui fonctionne — ne pas casser
+
+### Comparateur avant/après
+
+Deux bugs corrigés, tous deux liés à la cascade CSS ou à Safari :
+
+- **Pas de `clip-path`.** Découpe par conteneur à largeur variable
+  (`.doc-clip { width: var(--pos); overflow: hidden }`). Safari iOS ne repeint
+  pas `clip-path` de façon fiable pendant le défilement, le document débordait
+  sur la section suivante.
+- **`position: sticky` sur `.dossier` uniquement en `min-width: 941px`**, dans
+  une media query placée **après** la règle de base. Déclarée avant, elle était
+  écrasée à spécificité égale et la carte de devis se superposait au
+  comparateur sur mobile.
+- **Aucun `z-index` sur `.doc-tag`.** Chaque étiquette vit dans la couche de
+  son document pour être recouverte progressivement ; un z-index la ferait
+  flotter au-dessus du découpage.
 
 ### Les deux bandeaux défilants
 
-Logos et avis partagent la fonction `creerCarrousel()`. Points sensibles, tous
-issus de bugs réels déjà corrigés :
+Fonction commune `creerCarrousel(scroller, piste, parCopie, options)` :
 
-- **La position est accumulée en décimal côté JavaScript**, pas relue depuis
-  `scrollLeft`. À 24 px/s une image n'avance que de 0,4 px, or Safari iOS
-  arrondit `scrollLeft` à l'entier : un `scrollLeft += 0.4` perdait l'incrément
-  à chaque image et le bandeau restait figé. **Ne jamais revenir à une lecture-
-  modification-écriture de `scrollLeft`.**
-- **La période est mesurée** entre le premier élément d'une copie et celui de la
-  copie suivante (`children[n].offsetLeft - children[0].offsetLeft`). La déduire
-  de `scrollWidth / 3` est faux : l'espacement inter-copies s'ajoute, ce qui
-  produisait un sursaut de 15 px sur les logos à chaque tour.
-- **Trois copies** de la série, position maintenue dans celle du milieu, avec
-  repositionnement après `load` — les logos n'ont pas leurs dimensions à la
-  première mesure.
-- Le rebouclage attend l'arrêt du défilement (140 ms) pour ne pas couper
-  l'inertie iOS.
+- **Position accumulée en décimal côté JS**, jamais relue depuis `scrollLeft` :
+  à 24 px/s une image n'avance que de 0,4 px et Safari iOS arrondit à l'entier,
+  l'incrément était perdu et le bandeau restait figé.
+- **Période mesurée** entre deux copies (`children[n].offsetLeft -
+  children[0].offsetLeft`), jamais `scrollWidth / 3` : l'espacement
+  inter-copies s'ajoute et produisait un sursaut de 15 px à chaque tour.
+- Trois copies, position maintenue dans celle du milieu, repositionnement
+  après `load`.
+- Rebouclage différé de 140 ms pour ne pas couper l'inertie iOS.
+- **Avis** : `arretDefinitif: true`, la première interaction coupe l'avance
+  pour de bon. **Logos** : reprise après 5 s.
 
-Réglages en haut de `creerCarrousel()` : `vitesse` 24 px/s, `reprise` 5000 ms.
-L'utilisateur a validé les deux.
+### Ne jamais ajouter de garde `document.hidden`
 
-### Mobile
+Elle a cassé trois fois une fonctionnalité dans des contextes qui se déclarent
+masqués tout en étant visibles. `requestAnimationFrame` ne tourne déjà pas
+quand l'onglet est réellement caché.
 
-Le devis instantané passe avant le comparateur (`order` dans la media query
-940 px). Hero allégé sous 640 px. Barre CTA collante en bas. Prix visible à
-436 px et bouton de paiement à 595 px, donc au premier écran.
+### Carte de commande — collecte progressive
+
+Dépôt du bulletin obligatoire, plusieurs fichiers acceptés, la quantité se
+synchronise. Les coordonnées (e-mail, prénom, nom, remarque facultative)
+n'apparaissent qu'après le dépôt. Le bouton de paiement reste bloqué tant que
+l'e-mail n'est pas valide et les noms renseignés.
+
+**Apple Pay s'active dès le dépôt, sans formulaire** : la feuille Apple renvoie
+elle-même le nom et l'e-mail. Ne pas exiger la saisie avant, cela supprimerait
+son seul intérêt.
+
+Tout se passe dans la carte, **sans page intermédiaire** — décision assumée :
+chaque changement de page fait perdre des clients et contredirait la promesse
+d'immédiateté.
 
 ---
 
-## Décisions en attente de l'utilisateur
+## Contenu réel vs démonstration
+
+| Élément | État |
+|---|---|
+| 12 avis clients | **RÉELS**, fournis par l'utilisateur. Orthographe d'origine à conserver telle quelle. |
+| Bulletins du comparateur | **RÉELS**, caviardés irréversiblement. Originaux dans `~/Downloads` (`FR.pdf`, `EN.pdf`) — **ne jamais publier**. |
+| Logos ATA / ATC / Trackhouse | **RÉELS**, fournis par l'utilisateur. |
+| Notifications d'achat | **FICTIVES** — 200 acheteurs inventés, tableau `ACHETEURS`. À brancher sur les vraies commandes avant mise en ligne commerciale. |
+
+---
+
+## À faire
 
 1. **Le nom de marque.** « protranslayte » est le nom exact de **Translayte**
-   (translayte.com), société britannique établie : 9 971 avis Trustpilot,
-   membre accrédité ATC, membre corporate ATA — les deux mêmes accréditations
-   que celles affichées sur le bandeau. Risque de contrefaçon, référencement
-   impossible sur son propre nom, réputation d'un tiers qui rejaillit.
-   **Recommandation : changer de nom avant tout achat de domaine**, avec
-   vérification INPI et EUIPO.
-
-2. **Les 12 avis sont fictifs.** Écrits de toutes pièces comme remplissage de
-   maquette, jamais copiés sur de vraies personnes. Ils sont dans le tableau
-   `AVIS` en bas du script, avec un commentaire en majuscules. L'utilisateur
-   doit fournir de vrais avis avant toute mise en ligne commerciale.
-
-3. **Le contenu société** : mentions légales, SIRET, CGV, coordonnées — tout est
-   en attente.
+   (translayte.com), société britannique : 9 971 avis Trustpilot, membre
+   accrédité ATC et corporate ATA — les deux mêmes badges que notre bandeau.
+   Risque de contrefaçon, référencement impossible. **Trancher avant tout achat
+   de domaine**, vérifier INPI et EUIPO.
+2. **Brancher les notifications d'achat** sur les vraies commandes.
+3. **Reformuler le sous-titre des avis** : « Des parents et des étudiants qui
+   avaient une date limite à tenir » date des faux avis. Les vrais couvrent des
+   cas plus larges (BTS, diplôme allemand, usage personnel, deux anglophones).
+4. **Contenu société** : mentions légales, SIRET, CGV, contact, page de suivi.
+5. **Passer le tarif à 35 €** au 1er septembre.
+6. **Le vrai site** : Next.js App Router, Postgres/Prisma, Stripe Checkout avec
+   Apple Pay, stockage fichiers, emails transactionnels, Vercel. Pas de
+   back-office au départ.
 
 ---
 
-## Éléments de contexte utiles
+## Travailler avec l'utilisateur
 
-- L'analyse de la clientèle est dans `recherche-clientele.md` à la racine :
-  motivations réelles, freins, vocabulaire employé, et les correctifs faciles
-  identifiés dans les avis 4 étoiles des concurrents. **La rapidité prime sur
-  le prix** dans les avis, et **la peur de confier des documents intimes** est
-  le frein le moins bien traité par le marché.
-- Les bulletins du comparateur sont de vrais documents, caviardés de façon
-  irréversible : sous-échantillonnage destructif puis lissage, sur 25 zones par
-  document, positions détectées automatiquement. Vérifié illisible à 3× de
-  grossissement. Les PDF originaux non caviardés sont dans `~/Downloads`
-  (`FR.pdf`, `EN.pdf`) et **ne doivent jamais être publiés**.
-- Stack prévue pour le vrai site : Next.js App Router, Postgres/Prisma, Stripe
-  Checkout avec Apple Pay, stockage fichiers, emails transactionnels, Vercel.
-  Pas de back-office au départ.
-- L'utilisateur ne connaît pas Git ni les outils de déploiement. Guider pas à
-  pas, et ne jamais supposer qu'une commande lui est familière.
-- **Il demande explicitement d'être challengé** plutôt qu'approuvé. Donner un
-  avis technique franc, y compris quand il contredit sa demande, et distinguer
-  ce qui relève du goût de ce qui sert son projet.
+- **Il demande explicitement d'être challengé**, pas approuvé. Donner un avis
+  franc même quand il contredit sa demande, et distinguer ce qui relève du goût
+  de ce qui sert son projet.
+- **Confirmer avant de coder** quand on s'écarte de sa consigne. Il a perdu des
+  jetons sur un travail construit sans validation puis annulé.
+- Il ne connaît ni Git ni les outils de déploiement — guider pas à pas.
+- L'analyse de sa clientèle est dans `recherche-clientele.md` : la **rapidité
+  prime sur le prix**, et la **peur de confier des documents intimes** est le
+  frein le moins bien traité du marché.
