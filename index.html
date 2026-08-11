@@ -188,6 +188,23 @@
   .microtrust svg{width:13px;height:13px;color:var(--verified);flex:none;}
   .toast{font-size:0.78rem;color:var(--ink-soft);text-align:center;min-height:16px;}
 
+  /* ---------- COORDONNÉES (révélées après le dépôt) ---------- */
+  .contact{display:flex;flex-direction:column;gap:10px;
+    animation:contact-in .32s cubic-bezier(.22,.9,.3,1);}
+  @keyframes contact-in{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+  @media (prefers-reduced-motion: reduce){ .contact{animation:none;} }
+  .contact[hidden]{display:none;}
+  .contact .duo{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .contact input,.contact textarea{width:100%;font-family:var(--font-body);font-size:0.95rem;
+    padding:11px 12px;border-radius:5px;border:1px solid var(--rule);background:var(--paper);
+    color:var(--ink);resize:vertical;}
+  .contact input:focus,.contact textarea:focus{outline:2px solid var(--brass);outline-offset:-1px;border-color:var(--brass);}
+  .contact input[aria-invalid="true"]{border-color:#B3261E;}
+  .contact .aide{font-size:0.74rem;color:var(--ink-soft);margin:-3px 0 0;}
+  .btn:disabled,.apple-pay-btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn:disabled:hover{background:var(--brass);}
+  .fichiers{display:none;flex-direction:column;gap:3px;font-size:0.78rem;color:var(--verified);text-align:left;width:100%;}
+
   /* Collant réservé au grand écran, où la carte occupe une colonne dédiée à
      droite. Déclaré ici, donc après la règle de base : rien ne l'écrase, et
      sur mobile la carte reste dans le flux. */
@@ -478,9 +495,22 @@
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="u-title">Déposez votre bulletin ici</span>
           <span class="u-sub">ou cliquez pour choisir un fichier — PDF, JPG, PNG · 10 Mo max</span>
-          <span class="filename" id="filename"></span>
-          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png">
+          <span class="fichiers" id="filename"></span>
+          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" multiple>
         </label>
+
+        <div class="contact" id="contact" hidden>
+          <div>
+            <label class="aide" for="email">Où devons-nous envoyer la traduction ?</label>
+            <input type="email" id="email" inputmode="email" autocomplete="email"
+                   placeholder="votre@email.fr" required>
+          </div>
+          <div class="duo">
+            <input type="text" id="prenom" autocomplete="given-name" placeholder="Prénom" required>
+            <input type="text" id="nom" autocomplete="family-name" placeholder="Nom" required>
+          </div>
+          <textarea id="remarque" rows="2" placeholder="Une précision sur votre dossier ? (facultatif)"></textarea>
+        </div>
 
         <button class="btn btn-primary btn-block" id="payBtn" type="button">Payer 25&nbsp;€ et faire traduire mon bulletin</button>
         <div class="pay-divider">ou</div>
@@ -728,25 +758,66 @@
     updateLabel();
   });
 
+  /* ---------- Dépôt puis coordonnées, en progressif ----------
+     Rien n'est demandé avant que le visiteur ait déposé son document : le prix
+     reste l'accroche, et on ne réclame ses données qu'une fois qu'il s'est
+     engagé. Le paiement reste bloqué tant que le dossier est incomplet — payer
+     sans document n'aurait aucun sens, il n'y a rien à traduire. */
   var fileInput = document.getElementById('fileInput');
-  var filename = document.getElementById('filename');
+  var filename  = document.getElementById('filename');
+  var contact   = document.getElementById('contact');
+  var email     = document.getElementById('email');
+  var prenom    = document.getElementById('prenom');
+  var nom       = document.getElementById('nom');
+  var toast     = document.getElementById('toast');
+  var applePay  = document.getElementById('applePayBtn');
+  var boutonPayer = document.getElementById('payBtn');
+
   document.getElementById('uploadZone').addEventListener('click', function(e){
     if(e.target.tagName !== 'INPUT'){ fileInput.click(); }
   });
+
+  function emailValide(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
+
+  function verifier(){
+    var fichiers = fileInput.files.length;
+    // Apple Pay fournit lui-même le nom et l'e-mail : inutile d'exiger le
+    // formulaire avant, cela supprimerait son seul intérêt, le geste unique.
+    applePay.disabled = fichiers === 0;
+    boutonPayer.disabled = !(fichiers > 0 && emailValide(email.value) &&
+                             prenom.value.trim() && nom.value.trim());
+  }
+
   fileInput.addEventListener('change', function(){
-    if(fileInput.files.length){
+    var n = fileInput.files.length;
+    if(n){
       filename.style.display = 'flex';
-      filename.textContent = '✓ ' + fileInput.files[0].name;
+      filename.innerHTML = [].map.call(fileInput.files, function(f){
+        return '✓ ' + f.name.replace(/[<>&]/g, '');
+      }).join('<br>');
+      contact.hidden = false;
+      if(typeof majPrix === 'function' && n > qte){ qte = Math.min(n, MAX_DOCS); majPrix(); }
+      if(!email.value) email.focus({preventScroll:true});
     }
+    verifier();
+  });
+  [email, prenom, nom].forEach(function(champ){
+    champ.addEventListener('input', verifier);
+    champ.addEventListener('blur', function(){
+      if(champ === email && champ.value) champ.setAttribute('aria-invalid', String(!emailValide(champ.value)));
+    });
   });
 
-  var toast = document.getElementById('toast');
-  document.getElementById('payBtn').addEventListener('click', function(){
-    toast.textContent = 'Maquette de design — le paiement Stripe sera branché lors du développement.';
+  boutonPayer.addEventListener('click', function(){
+    toast.textContent = 'Maquette — le paiement Stripe sera branché lors du développement.';
   });
-  document.getElementById('applePayBtn').addEventListener('click', function(){
-    toast.textContent = 'Maquette de design — Apple Pay via Stripe sera branché lors du développement.';
+  applePay.addEventListener('click', function(){
+    toast.textContent = 'Maquette — Apple Pay renverra le nom et l\'e-mail via la feuille Apple.';
   });
+  document.getElementById('uploadZone').addEventListener('pointerdown', function(){
+    if(!fileInput.files.length) toast.textContent = '';
+  });
+  verifier();
   document.getElementById('refnum').textContent = 'DOSSIER N° ' + Math.floor(100000 + Math.random()*899999);
 
   /* ---------- Barre CTA collante (mobile) ---------- */
@@ -760,6 +831,11 @@
   }
   document.getElementById('stickyBtn').addEventListener('click', function(){
     dossier.scrollIntoView({behavior:'smooth', block:'center'});
+    // on amène directement là où l'action est attendue
+    setTimeout(function(){
+      var cible = fileInput.files.length ? email : document.getElementById('uploadZone');
+      if(cible && cible.focus) cible.focus({preventScroll:true});
+    }, 500);
   });
 
   /* ============================================================
