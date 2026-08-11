@@ -300,7 +300,13 @@
   .review-card{flex:none;width:318px;background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;padding:19px 20px;margin:0;display:flex;flex-direction:column;gap:11px;box-shadow:0 10px 24px -20px var(--shadow);}
   .review-stars{display:flex;gap:2px;}
   .review-stars svg{width:15px;height:15px;color:#E4A33B;}
-  .review-text{font-size:0.91rem;line-height:1.5;color:var(--ink);margin:0;}
+  .review-text{font-size:0.91rem;line-height:1.5;color:var(--ink);margin:0;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;}
+  .review-card.is-open .review-text{-webkit-line-clamp:unset;overflow:visible;}
+  .review-plus{align-self:flex-start;background:transparent;border:none;padding:0;margin:-4px 0 0;
+    color:var(--brass);font:inherit;font-size:0.82rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;}
+  .review-plus:hover{color:var(--brass-deep);text-decoration:underline;}
+  .review-plus[hidden]{display:none;}
   .review-meta{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:6px;}
   .review-av{width:32px;height:32px;border-radius:50%;background:var(--brass-tint);color:var(--brass-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex:none;}
   .review-name{font-size:0.88rem;font-weight:600;line-height:1.2;}
@@ -794,6 +800,7 @@
     return '<figure class="review-card"' + (muet ? ' aria-hidden="true"' : '') + '>' +
              '<div class="review-stars" role="img" aria-label="' + a.e + ' étoiles sur 5">' + new Array(a.e + 1).join(etoile) + '</div>' +
              '<blockquote class="review-text">' + a.texte + '</blockquote>' +
+             '<button class="review-plus" type="button" aria-label="Lire l\'avis en entier">…</button>' +
              '<figcaption class="review-meta">' +
                '<span class="review-av" aria-hidden="true">' + a.nom.charAt(0).toUpperCase() + '</span>' +
                '<span class="review-name">' + a.nom + '</span>' +
@@ -861,11 +868,15 @@
     function suspendre(){
       auto = false;
       clearTimeout(minuteur);
+      // Sur les avis, la premiere interaction coupe l'avance pour de bon :
+      // le visiteur lit, on ne lui reprend pas la main.
+      if(options.arretDefinitif) return;
       minuteur = setTimeout(function(){ auto = true; }, REPRISE);
     }
 
     scroller.addEventListener('pointerdown', function(e){
       suspendre();
+      if(e.target.closest('button')) return;  // laisser le clic aux boutons
       if(e.pointerType !== 'mouse') return;   // le tactile est géré nativement
       glisse = true;
       departX = e.clientX;
@@ -945,7 +956,21 @@
       AVIS.map(function(a){ return carteAvis(a, false); }).join('') +
       AVIS.map(function(a){ return carteAvis(a, true);  }).join('') +
       AVIS.map(function(a){ return carteAvis(a, true);  }).join('');
-    creerCarrousel(document.getElementById('reviewsScroller'), reviewsTrack, AVIS.length);
+    // Le bouton n'apparait que si le texte deborde vraiment de ses 4 lignes.
+    [].forEach.call(reviewsTrack.querySelectorAll('.review-card'), function(carte){
+      var txt = carte.querySelector('.review-text');
+      var btn = carte.querySelector('.review-plus');
+      if(txt.scrollHeight <= txt.clientHeight + 2) btn.hidden = true;
+    });
+    reviewsTrack.addEventListener('click', function(e){
+      var btn = e.target.closest('.review-plus');
+      if(!btn) return;
+      var carte = btn.closest('.review-card');
+      var ouvert = carte.classList.toggle('is-open');
+      btn.textContent = ouvert ? 'Réduire' : '…';
+      btn.setAttribute('aria-label', ouvert ? 'Réduire cet avis' : "Lire l'avis en entier");
+    });
+    creerCarrousel(document.getElementById('reviewsScroller'), reviewsTrack, AVIS.length, {arretDefinitif:true});
   }
 
   /* --- Logos : la série est déjà dans le HTML, on la triple --- */
