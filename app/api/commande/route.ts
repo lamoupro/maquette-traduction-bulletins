@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { MAX_DOCS, PRIX_OFFRE } from '@/lib/data';
+import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
 
 export const runtime = 'nodejs';
 
@@ -72,13 +73,33 @@ export async function POST(requete: Request) {
     fichiers: fichiers.map((f) => ({ nom: f.name, taille: f.size, type: f.type })),
   };
 
-  // TODO — étapes suivantes, dans cet ordre :
-  //   1. stocker les fichiers (Vercel Blob ou S3) et persister la commande
-  //   2. créer la session de paiement Stripe et rediriger
-  //   3. sur webhook `checkout.session.completed` : e-mail de confirmation au
-  //      client, et transfert des documents à l'adresse interne
-  // Pour l'instant la commande est seulement journalisée : rien n'est débité.
-  console.log('[commande]', JSON.stringify(commande));
+  // Sans stockage configuré, on refuse plutôt que de faire croire au client
+  // que son dossier est enregistré alors que ses fichiers seraient perdus.
+  if (!stockageConfigure()) {
+    console.error('[commande] stockage non configuré, dépôt refusé');
+    return NextResponse.json(
+      { erreur: "Le dépôt est momentanément indisponible. Réessayez dans quelques minutes." },
+      { status: 503 },
+    );
+  }
 
+  try {
+    const deposes: string[] = [];
+    for (const [i, f] of fichiers.entries()) {
+      const cle = `commandes/${commande.reference}/${String(i + 1).padStart(2, '0')}-${nomSur(f.name)}`;
+      await deposer(cle, Buffer.from(await f.arrayBuffer()), f.type);
+      deposes.push(cle);
+    }
+    await ecrireFiche(commande.reference, { ...commande, cles: deposes });
+  } catch (e) {
+    console.error('[commande] échec du stockage', e);
+    return NextResponse.json(
+      { erreur: "Nous n'avons pas pu enregistrer vos documents. Réessayez." },
+      { status: 500 },
+    );
+  }
+
+  // TODO — étapes suivantes : paiement Stripe, puis e-mail de confirmation au
+  // client et transfert des documents à l'adresse interne.
   return NextResponse.json({ reference: commande.reference, montant });
 }
