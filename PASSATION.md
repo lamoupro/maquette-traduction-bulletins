@@ -7,8 +7,19 @@ Mise à jour le 11 août 2026. À lire en premier avant toute reprise.
 Maquette de landing page pour un service de traduction assermentée de bulletins
 de notes. Marché francophone.
 
-**En ligne :** https://lamoupro.github.io/maquette-traduction-bulletins/
+**En ligne :** https://protranslayte.com (et www), HTTPS actif
+**Hébergement :** Vercel, projet `maquette-traduction-bulletins`, équipe `protranslayte`, forfait Hobby
 **Dépôt :** https://github.com/lamoupro/maquette-traduction-bulletins (public, `noindex`)
+**Domaine :** acheté chez OVH. DNS : deux enregistrements A vers `76.76.21.21`
+(racine et www). Les AAAA d'origine ont été supprimés — sans quoi les visiteurs
+en IPv6 atterrissaient chez OVH. Les MX OVH sont intacts, l'e-mail fonctionne.
+
+> ⚠️ `vercel.json` fixe `outputDirectory` sur `docs/`. **Ne pas le retirer** :
+> à l'import, Vercel servait `index.html` à la racine — le fichier source, sans
+> `<head>` ni balise viewport — et les téléphones rendaient la page à 980 px.
+
+Chaque `git push` sur `main` déclenche un redéploiement automatique.
+GitHub Pages reste actif en parallèle, sur l'ancienne adresse.
 
 ```
 site/
