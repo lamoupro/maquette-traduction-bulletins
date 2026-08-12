@@ -297,13 +297,15 @@
   .logo-chip img.ata{height:54px;}
   .logo-chip img.atc{height:38px;}
   .logo-chip img.th{height:42px;}
-  .logo-item .badge-copy{display:flex;flex-direction:column;line-height:1.25;}
+  /* Sans prefixe : le badge de livraison n'est pas dans un .logo-item, la
+     regle ne s'y appliquait pas et ses deux lignes se collaient. */
+  .badge-copy{display:flex;flex-direction:column;line-height:1.25;}
   .logo-item .badge-name{font-size:0.9rem;font-weight:700;color:var(--ink);}
   .logo-item .badge-role{font-size:0.74rem;color:var(--ink-soft);}
   .delivery-badge{display:flex;align-items:center;gap:11px;border:1.5px solid var(--brass);border-radius:8px;padding:10px 16px;flex:none;}
   .delivery-badge svg{width:26px;height:26px;color:var(--brass);flex:none;}
   .delivery-badge .d-main{font-family:var(--font-mono);font-size:1.02rem;font-weight:700;color:var(--ink);line-height:1.15;}
-  .delivery-badge .d-sub{font-size:0.72rem;color:var(--ink-soft);letter-spacing:0.02em;text-transform:uppercase;}
+  .delivery-badge .d-sub{font-size:0.72rem;margin-top:1px;color:var(--ink-soft);letter-spacing:0.02em;text-transform:uppercase;}
 
   /* ---------- AVIS CLIENTS ---------- */
   .reviews{padding:54px 0 58px;border-bottom:1px solid var(--rule);}
