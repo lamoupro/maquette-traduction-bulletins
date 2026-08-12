@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MAX_DOCS, PRIX_OFFRE } from '@/lib/data';
 import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
+import { envoyerEmails } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -99,7 +100,10 @@ export async function POST(requete: Request) {
     );
   }
 
-  // TODO — étapes suivantes : paiement Stripe, puis e-mail de confirmation au
-  // client et transfert des documents à l'adresse interne.
+  // Les e-mails ne bloquent pas la réponse : le dossier est déjà enregistré,
+  // un envoi manqué se rattrape, une commande perdue non.
+  await envoyerEmails(commande, fichiers.length);
+
+  // TODO — étape suivante : paiement Stripe.
   return NextResponse.json({ reference: commande.reference, montant });
 }
