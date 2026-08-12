@@ -166,6 +166,14 @@
     box-shadow:0 24px 50px -28px var(--shadow);display:flex;flex-direction:column;gap:18px;}
   .dossier-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .dossier-top .ref{font-family:var(--font-mono);font-size:0.68rem;color:var(--ink-soft);}
+  /* Balisage du parcours : donne un horizon fini a la commande. */
+  .etapes{display:flex;flex-direction:column;gap:7px;}
+  .etapes-barre{display:flex;gap:4px;}
+  .etapes-barre i{flex:1;height:4px;border-radius:2px;background:var(--rule);
+    transition:background .28s ease;}
+  .etapes-barre i.on{background:var(--brass);}
+  .etapes-txt{font-size:0.76rem;color:var(--ink-soft);}
+  .etapes-txt strong{color:var(--brass-deep);font-weight:700;}
   .field-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;}
   .field label{display:block;font-size:0.72rem;color:var(--ink-soft);margin-bottom:6px;}
   select{width:100%;font-family:var(--font-body);font-size:0.95rem;padding:11px 12px;border-radius:5px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);appearance:none;}
@@ -456,6 +464,11 @@
         <div class="dossier-top">
           <span class="eyebrow">Devis instantané</span>
           <span class="ref tabular" id="refnum">DOSSIER N° —</span>
+        </div>
+
+        <div class="etapes">
+          <div class="etapes-barre" aria-hidden="true"><i id="et1"></i><i id="et2"></i><i id="et3"></i></div>
+          <p class="etapes-txt" id="etapesTxt" aria-live="polite"><strong>Étape 1 sur 3</strong> · Déposez vos bulletins</p>
         </div>
 
         <div class="field-row">
@@ -783,8 +796,21 @@
 
   function emailValide(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
 
+  function majEtapes(){
+    var barres = [document.getElementById('et1'), document.getElementById('et2'), document.getElementById('et3')];
+    var txt = document.getElementById('etapesTxt');
+    if(!txt) return;
+    var fichiers = fileInput.files.length;
+    var complet = fichiers > 0 && emailValide(email.value) && prenom.value.trim() && nom.value.trim();
+    var n = complet ? 3 : (fichiers > 0 ? 2 : 1);
+    var libelle = ['Déposez vos bulletins', 'Vos coordonnées', 'Prêt à payer'][n - 1];
+    barres.forEach(function(b, i){ if(b) b.classList.toggle('on', i < n); });
+    txt.innerHTML = '<strong>Étape ' + n + ' sur 3</strong> · ' + libelle;
+  }
+
   function verifier(){
     var fichiers = fileInput.files.length;
+    majEtapes();
     // Apple Pay fournit lui-même le nom et l'e-mail : inutile d'exiger le
     // formulaire avant, cela supprimerait son seul intérêt, le geste unique.
     applePay.disabled = fichiers === 0;
@@ -1283,6 +1309,7 @@
       ' et faire traduire ' + (qte > 1 ? 'mes bulletins' : 'mon bulletin');
     if(elSNow) elSNow.innerHTML = apres.toLocaleString('fr-FR') + '&nbsp;€';
     if(elSOld) elSOld.textContent = eur(avant);
+    majEtapes();
     if(elMoins) elMoins.disabled = qte <= 1;
     if(elPlus)  elPlus.disabled  = qte >= MAX_DOCS;
   }
