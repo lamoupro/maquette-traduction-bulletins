@@ -496,9 +496,9 @@
         <label class="upload" id="uploadZone">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <span class="u-title">Déposez votre bulletin ici</span>
-          <span class="u-sub">ou cliquez pour choisir un fichier — PDF, JPG, PNG · 10 Mo max</span>
+          <span class="u-sub">PDF ou photo · plusieurs fichiers possibles</span>
           <span class="fichiers" id="filename"></span>
-          <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" multiple>
+          <input type="file" id="fileInput" accept="application/pdf,image/*" multiple>
         </label>
 
         <div class="contact" id="contact" hidden>
@@ -775,9 +775,9 @@
   var applePay  = document.getElementById('applePayBtn');
   var boutonPayer = document.getElementById('payBtn');
 
-  document.getElementById('uploadZone').addEventListener('click', function(e){
-    if(e.target.tagName !== 'INPUT'){ fileInput.click(); }
-  });
+  // Aucun déclenchement JS ici : le <label> ouvre déjà le sélecteur nativement.
+  // Un fileInput.click() supplémentaire faisait double ouverture, et Safari iOS
+  // annulait la seconde — le fichier n'était jamais transmis.
 
   function emailValide(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()); }
 
