@@ -2,16 +2,10 @@ import { Resend } from 'resend';
 
 /* Envoi des e-mails transactionnels.
 
-   Les bulletins sont joints à la notification INTERNE uniquement, jamais au
-   message du client. C'est un choix de confort assumé : les documents
-   arrivent directement dans la boîte, prêts à être transmis au traducteur,
-   sans passer par l'administration.
-
-   Contrepartie à garder en tête : une copie des données scolaires — souvent
-   celles de mineurs — subsiste alors dans les boîtes de réception, hors de
-   la suppression automatique à 30 jours du stockage. La politique de
-   confidentialité le mentionne explicitement. Purger ces boîtes de temps en
-   temps fait donc partie de l'hygiène du service. */
+   Aucun bulletin n'est joint : la notification interne renvoie vers la page
+   d'administration, où l'accès est authentifié et les liens expirent. Faire
+   transiter des données personnelles de mineurs par un service tiers
+   ajouterait une exposition inutile. */
 
 const EXPEDITEUR = process.env.EMAIL_EXPEDITEUR ?? 'Protranslayte <contact@protranslayte.com>';
 /* Destinataires de la notification interne. Deux adresses volontairement :
@@ -28,13 +22,6 @@ const INTERNE = (process.env.EMAIL_INTERNE ?? 'contact@protranslayte.com,lamoupr
 const SITE = process.env.SITE_URL ?? 'https://protranslayte.com';
 
 export const emailConfigure = () => Boolean(process.env.RESEND_API_KEY);
-
-/* Au-delà de cette taille cumulée, on n'attache rien : la plupart des
-   serveurs refusent les messages de plus de 20 à 25 Mo, et un envoi rejeté
-   serait pire qu'un envoi sans pièce jointe. On bascule alors sur le lien. */
-const LIMITE_PIECES_JOINTES = 15 * 1024 * 1024;
-
-export type PieceJointe = { nom: string; contenu: Buffer };
 
 export type Commande = {
   reference: string;
@@ -107,8 +94,8 @@ function messageClient(c: Commande) {
   };
 }
 
-/** Notification interne : documents joints quand la taille le permet. */
-function messageInterne(c: Commande, nbFichiers: number, joints: boolean) {
+/** Notification interne : jamais de pièce jointe, uniquement un lien. */
+function messageInterne(c: Commande, nbFichiers: number) {
   const corps =
     ligne(
       `<strong>${c.quantite} document${c.quantite > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${c.montant} €</strong>`,
@@ -119,11 +106,7 @@ function messageInterne(c: Commande, nbFichiers: number, joints: boolean) {
     (c.remarque
       ? `<p style="margin:12px 0;padding:10px 12px;background:#F5F8FC;border-radius:6px;font-size:0.9rem;">${echapper(c.remarque)}</p>`
       : '') +
-    ligne(
-      joints
-        ? `${nbFichiers} fichier${nbFichiers > 1 ? 's' : ''} <strong>joint${nbFichiers > 1 ? 's' : ''} à ce message</strong>.`
-        : `${nbFichiers} fichier${nbFichiers > 1 ? 's' : ''} déposé${nbFichiers > 1 ? 's' : ''} — trop volumineux pour être joints, à récupérer depuis l'administration.`,
-    ) +
+    ligne(`${nbFichiers} fichier${nbFichiers > 1 ? 's' : ''} déposé${nbFichiers > 1 ? 's' : ''}.`) +
     `<p style="margin:18px 0 0;">
        <a href="${SITE}/admin" style="display:inline-block;background:#1359B8;color:#fff;text-decoration:none;padding:12px 20px;border-radius:5px;font-weight:600;font-size:0.94rem;">
          Ouvrir l'administration
@@ -138,16 +121,10 @@ function messageInterne(c: Commande, nbFichiers: number, joints: boolean) {
 
 /** Envoie les deux messages. N'interrompt jamais la commande en cas d'échec :
     le dossier est déjà enregistré, un e-mail perdu se rattrape. */
-export async function envoyerEmails(c: Commande, pieces: PieceJointe[]) {
+export async function envoyerEmails(c: Commande, nbFichiers: number) {
   if (!emailConfigure()) {
     console.warn('[email] RESEND_API_KEY absente, aucun envoi');
     return { client: false, interne: false };
-  }
-
-  const poids = pieces.reduce((t, p) => t + p.contenu.length, 0);
-  const joints = pieces.length > 0 && poids <= LIMITE_PIECES_JOINTES;
-  if (!joints && pieces.length > 0) {
-    console.warn(`[email] ${Math.round(poids / 1024 / 1024)} Mo de pièces, envoi sans attache`);
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -157,10 +134,7 @@ export async function envoyerEmails(c: Commande, pieces: PieceJointe[]) {
       from: EXPEDITEUR,
       to: INTERNE,
       replyTo: c.client.email,
-      ...messageInterne(c, pieces.length, joints),
-      ...(joints
-        ? { attachments: pieces.map((p) => ({ filename: p.nom, content: p.contenu })) }
-        : {}),
+      ...messageInterne(c, nbFichiers),
     }),
   ]);
 
