@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MAX_DOCS, PRIX_OFFRE } from '@/lib/data';
 import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
-import { envoyerEmails } from '@/lib/email';
+import { envoyerEmails, type PieceJointe } from '@/lib/email';
 
 export const runtime = 'nodejs';
 
@@ -84,12 +84,19 @@ export async function POST(requete: Request) {
     );
   }
 
+  // Les fichiers ne sont lus qu'une fois : le même tampon sert au stockage
+  // puis aux pièces jointes de la notification interne.
+  const pieces: PieceJointe[] = [];
+
   try {
     const deposes: string[] = [];
     for (const [i, f] of fichiers.entries()) {
-      const cle = `commandes/${commande.reference}/${String(i + 1).padStart(2, '0')}-${nomSur(f.name)}`;
-      await deposer(cle, Buffer.from(await f.arrayBuffer()), f.type);
+      const nom = nomSur(f.name);
+      const cle = `commandes/${commande.reference}/${String(i + 1).padStart(2, '0')}-${nom}`;
+      const contenu = Buffer.from(await f.arrayBuffer());
+      await deposer(cle, contenu, f.type);
       deposes.push(cle);
+      pieces.push({ nom, contenu });
     }
     await ecrireFiche(commande.reference, { ...commande, cles: deposes });
   } catch (e) {
@@ -102,7 +109,7 @@ export async function POST(requete: Request) {
 
   // Les e-mails ne bloquent pas la réponse : le dossier est déjà enregistré,
   // un envoi manqué se rattrape, une commande perdue non.
-  await envoyerEmails(commande, fichiers.length);
+  await envoyerEmails(commande, pieces);
 
   // TODO — étape suivante : paiement Stripe.
   return NextResponse.json({ reference: commande.reference, montant });

@@ -109,6 +109,10 @@ export default function Confidentialite() {
             <td>3 ans à compter de la dernière commande</td>
           </tr>
           <tr>
+            <td>Copie transmise par courrier électronique à notre équipe</td>
+            <td>Supprimée au plus tard 3 mois après la livraison</td>
+          </tr>
+          <tr>
             <td>Pièces comptables et factures</td>
             <td>10 ans — article L123-22 du code de commerce</td>
           </tr>
@@ -125,6 +129,12 @@ export default function Confidentialite() {
         un espace de stockage privé et ne peuvent être consultés qu&apos;au moyen de liens signés
         expirant au bout d&apos;une heure, générés depuis une interface d&apos;administration
         protégée par mot de passe. Les échanges avec le site sont chiffrés de bout en bout (HTTPS).
+      </p>
+      <p>
+        Une copie de vos documents est également adressée par courrier électronique, de façon
+        chiffrée en transit, aux seules boîtes professionnelles de l&apos;éditeur, afin que votre
+        dossier soit pris en charge sans délai. Aucune copie n&apos;est envoyée à un autre
+        destinataire, et ces messages sont supprimés au plus tard trois mois après la livraison.
       </p>
 
       <h2>Destinataires</h2>
