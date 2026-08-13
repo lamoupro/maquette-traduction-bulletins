@@ -25,14 +25,9 @@ export default function Contact() {
           </p>
         </div>
 
-        <div className="legal-carte">
-          <h2>Par téléphone</h2>
-          <p className="legal-gros">
-            <Champ v={e.telephone} />
-          </p>
-          <p>Du lundi au vendredi, de 9 h à 18 h.</p>
-        </div>
-
+        {/* Pas de téléphone ici : le support se fait par écrit, pour garder une
+            trace du dossier et de la référence. Le numéro reste publié dans les
+            mentions légales, où la loi l'exige. */}
         <div className="legal-carte">
           <h2>Par voie postale</h2>
           <p>
@@ -58,12 +53,12 @@ export default function Contact() {
         messages automatiques y atterrissent parfois.
       </p>
 
-      <h2>Réclamation ou litige</h2>
+      <h2>Réclamation ou remboursement</h2>
       <p>
-        Adressez d&apos;abord votre réclamation à <a href={`mailto:${e.email}`}>{e.email}</a>. À
-        défaut de solution, vous pouvez saisir gratuitement le médiateur de la consommation dont
-        les coordonnées figurent à l&apos;article 11 des <a href="/cgv">conditions générales de
-        vente</a>.
+        Écrivez-nous à <a href={`mailto:${e.email}`}>{e.email}</a> en rappelant votre référence.
+        Une traduction qui ne convient pas est corrigée sans frais, ou remboursée — vous avez{' '}
+        {ENTREPRISE.garantieJours} jours, sans justification à fournir. Le détail figure à
+        l&apos;article 8 des <a href="/cgv">conditions générales de vente</a>.
       </p>
     </PageLegale>
   );

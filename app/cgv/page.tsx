@@ -99,25 +99,46 @@ export default function CGV() {
 
       <h2>Article 7 — Droit de rétractation</h2>
       <p>
-        Vous disposez en principe d&apos;un délai de quatorze jours pour exercer votre droit de
-        rétractation, sans avoir à motiver votre décision.
+        Vous disposez d&apos;un délai de <strong>quatorze jours</strong> à compter de la commande
+        pour exercer votre droit de rétractation, sans avoir à motiver votre décision ni à
+        supporter de frais.
       </p>
       <p className="legal-encadre">
-        <strong>Exception applicable à ce service.</strong> Parce que la traduction commence
-        immédiatement après le paiement, il vous est demandé, au moment de commander, de consentir
-        expressément à cette exécution immédiate et de renoncer expressément à votre droit de
-        rétractation. Conformément à l&apos;article L221-28 3° du code de la consommation, ce droit
-        ne peut plus être exercé <strong>une fois la traduction pleinement exécutée</strong>,
-        c&apos;est-à-dire une fois le document certifié livré.
+        <strong>Nous ne vous demandons pas d&apos;y renoncer.</strong> La loi permettrait de vous
+        faire renoncer à ce droit en contrepartie d&apos;une exécution immédiate. Nous avons choisi
+        de ne pas le faire : vous conservez votre droit de rétractation entier, y compris après
+        avoir reçu votre traduction.
       </p>
       <p>
-        Tant que la traduction n&apos;a pas été livrée, vous conservez la faculté de vous rétracter
-        en nous écrivant à <a href={`mailto:${e.email}`}>{e.email}</a>. Le montant retenu est alors
-        proportionné au travail déjà accompli ; le solde vous est remboursé sous quatorze jours,
-        par le même moyen de paiement que celui utilisé lors de la commande.
+        Il suffit de nous écrire à <a href={`mailto:${e.email}`}>{e.email}</a> en rappelant la
+        référence de votre dossier. Aucune formule particulière n&apos;est exigée.
       </p>
 
-      <h2>Article 8 — Réclamations et garanties</h2>
+      <h2>Article 8 — Garantie de remboursement</h2>
+      <p className="legal-encadre">
+        <strong>
+          Satisfait ou remboursé pendant {ENTREPRISE.garantieJours} jours, sans justification.
+        </strong>{' '}
+        Cette garantie commerciale s&apos;ajoute au droit de rétractation et va au-delà de ce que
+        la loi impose. Si la traduction ne vous convient pas, quelle qu&apos;en soit la raison,
+        écrivez-nous : nous la corrigeons, ou nous vous remboursons.
+      </p>
+      <p>
+        Le remboursement est effectué sous {ENTREPRISE.remboursementJoursOuvres} jours ouvrés, par
+        le même moyen de paiement que celui utilisé lors de la commande, sans frais pour vous. Le
+        délai maximal légal de quatorze jours reste garanti en tout état de cause.
+      </p>
+      <p>
+        Vous n&apos;avez rien à renvoyer et rien à prouver. Si le document a été refusé par
+        l&apos;organisme auquel vous l&apos;avez présenté, indiquez-nous simplement le motif du
+        refus : dans la plupart des cas nous corrigeons sans frais, et à défaut nous remboursons.
+      </p>
+      <p>
+        Cette garantie ne restreint ni votre droit de rétractation (article 7), ni les garanties
+        légales rappelées à l&apos;article 9.
+      </p>
+
+      <h2>Article 9 — Réclamations et garanties légales</h2>
       <p>
         Toute réclamation portant sur une erreur de traduction, une omission ou une erreur de
         transcription doit nous être adressée à <a href={`mailto:${e.email}`}>{e.email}</a> en
@@ -130,7 +151,7 @@ export default function CGV() {
         suivants du code civil).
       </p>
 
-      <h2>Article 9 — Responsabilité</h2>
+      <h2>Article 10 — Responsabilité</h2>
       <p>
         Nous répondons de la fidélité de la traduction et de la régularité de sa certification.
         Notre responsabilité ne saurait en revanche être engagée en cas de refus du document par un
@@ -144,7 +165,7 @@ export default function CGV() {
         la commande concernée.
       </p>
 
-      <h2>Article 10 — Données personnelles</h2>
+      <h2>Article 11 — Données personnelles</h2>
       <p>
         Les documents déposés sont conservés dans un espace privé pendant{' '}
         {CONSERVATION_JOURS} jours, puis supprimés. Ils contiennent des données personnelles, le
@@ -153,26 +174,38 @@ export default function CGV() {
         <a href="/confidentialite">politique de confidentialité</a>.
       </p>
 
-      <h2>Article 11 — Médiation de la consommation</h2>
+      <h2>Article 12 — Règlement des litiges</h2>
       <p>
-        En cas de litige non résolu par une réclamation écrite préalable auprès de nos services,
-        vous pouvez recourir gratuitement au médiateur de la consommation suivant :
+        Adressez d&apos;abord votre réclamation à <a href={`mailto:${e.email}`}>{e.email}</a>.
+        Compte tenu de la garantie de remboursement prévue à l&apos;article 8, la très grande
+        majorité des différends se règle en un échange.
       </p>
-      <p>
-        <strong>
-          <Champ v={e.mediateur.nom} />
-        </strong>
-        <br />
-        <Champ v={e.mediateur.adresse} />
-        <br />
-        <Champ v={e.mediateur.site} />
-      </p>
-      <p>
-        Vous pouvez également recourir à la plateforme européenne de règlement en ligne des
-        litiges.
-      </p>
+      {e.mediateur ? (
+        <>
+          <p>
+            À défaut de solution, vous pouvez recourir gratuitement au médiateur de la consommation
+            suivant :
+          </p>
+          <p>
+            <strong>
+              <Champ v={e.mediateur.nom} />
+            </strong>
+            <br />
+            <Champ v={e.mediateur.adresse} />
+            <br />
+            <Champ v={e.mediateur.site} />
+          </p>
+        </>
+      ) : (
+        <p>
+          Conformément à l&apos;article L612-1 du code de la consommation, vous disposez du droit de
+          recourir gratuitement à un médiateur de la consommation en vue de la résolution amiable
+          d&apos;un litige. Vous pouvez également saisir la plateforme européenne de règlement en
+          ligne des litiges.
+        </p>
+      )}
 
-      <h2>Article 12 — Droit applicable</h2>
+      <h2>Article 13 — Droit applicable</h2>
       <p>
         Les présentes conditions sont soumises au droit français. En cas de litige, les tribunaux
         français sont compétents. Cette clause ne prive pas le consommateur de la faculté de saisir

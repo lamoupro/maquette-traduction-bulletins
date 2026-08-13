@@ -58,19 +58,38 @@ export const ENTREPRISE = {
   /* Personne responsable du contenu publié. En général le dirigeant. */
   directeurPublication: 'Martin Lamou',
 
-  telephone: A_REMPLIR,
+  /* Obligatoire dans les mentions légales : l'article 6 III de la LCEN et
+     l'article L111-1 du code de la consommation imposent un moyen de contact
+     téléphonique. En revanche il n'apparaît PAS sur la page contact — choix
+     de Martin, le support se fait par écrit. */
+  telephone: '06 59 99 04 78',
   email: 'contact@protranslayte.com',
   site: 'protranslayte.com',
 
-  /* Médiateur de la consommation. L'adhésion à un dispositif de médiation
-     est OBLIGATOIRE pour tout professionnel vendant à des particuliers
-     (article L612-1 du code de la consommation), et son nom doit figurer
-     dans les CGV. Compter environ 50 à 200 € par an. */
-  mediateur: {
-    nom: A_REMPLIR,
-    site: A_REMPLIR,
-    adresse: A_REMPLIR,
-  },
+  /* Durée de la garantie commerciale de remboursement, en jours. Volontaire
+     et plus large que le droit de rétractation légal (14 jours). Un litige
+     bancaire coûte plus cher qu'un remboursement : mieux vaut rembourser
+     largement que se défendre. */
+  garantieJours: 30,
+
+  /* Délai d'engagement pour rembourser, en jours ouvrés. Le maximum légal
+     est de 14 jours calendaires ; on annonce mieux. */
+  remboursementJoursOuvres: 5,
+
+  /* Médiateur de la consommation.
+
+     ADHÉSION NON SOUSCRITE À CE JOUR — décision de Martin, 13 août 2026.
+
+     À savoir : l'article L612-1 du code de la consommation impose à tout
+     professionnel vendant à des particuliers d'adhérer à un dispositif de
+     médiation et d'en publier les coordonnées. L'absence de cette mention
+     est passible d'une amende administrative pouvant atteindre 15 000 €
+     pour une personne physique. Le coût de l'adhésion se situe entre 50 et
+     200 € par an.
+
+     Tant que `nom` vaut null, les CGV mentionnent le principe de la
+     médiation et la plateforme européenne, sans nommer d'organisme. */
+  mediateur: null as { nom: string; site: string; adresse: string } | null,
 };
 
 /* Sous-traitants qui accèdent aux données, à jour de l'architecture réelle.
@@ -117,11 +136,11 @@ export function legalComplet() {
     e.siret,
     e.directeurPublication,
     e.telephone,
-    e.mediateur.nom,
-    e.mediateur.site,
     ...e.adresse,
   ];
-  return valeurs.every((v) => v && v !== A_REMPLIR);
+  // Le médiateur reste une obligation non satisfaite : voir le commentaire
+  // sur le champ `mediateur`.
+  return valeurs.every((v) => v && v !== A_REMPLIR) && e.mediateur !== null;
 }
 
 /** SIREN déduit du SIRET, ou null tant que le SIRET n'est pas renseigné. */
