@@ -44,5 +44,15 @@ export const COMMANDES: [number, string, number][] = [
 
 export const PRIX_NORMAL = 35;
 export const PRIX_OFFRE = 25;
+
+/* Option d'envoi de l'original papier, France métropolitaine.
+
+   Le timbre nu est à 1,52 € en 2026, 2,02 € avec suivi. On facture 4,90 €
+   parce que l'envoi comprend aussi l'enveloppe, l'impression de l'exemplaire
+   tamponné et le dépôt en bureau de poste — et parce qu'un original perdu
+   oblige à refaire la prestation entière : le suivi n'est pas une option.
+
+   Un seul chiffre à changer ici pour ajuster le tarif partout. */
+export const PRIX_ENVOI = 4.9;
 export const MAX_DOCS = 40;
 export const FIN_OFFRE = new Date(2026, 7, 31, 23, 59, 59);

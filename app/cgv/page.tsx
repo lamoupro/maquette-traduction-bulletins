@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import PageLegale, { Champ } from '@/components/PageLegale';
 import { ENTREPRISE } from '@/lib/legal';
-import { MAX_DOCS, PRIX_OFFRE } from '@/lib/data';
+import { MAX_DOCS, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
 import { CONSERVATION_JOURS } from '@/lib/stockage';
 
 export const metadata: Metadata = { title: 'Conditions générales de vente — Protranslayte' };
@@ -57,6 +57,12 @@ export default function CGV() {
         )}
       </p>
       <p>
+        L&apos;envoi de l&apos;exemplaire original par voie postale est une option facturée{' '}
+        <strong>{PRIX_ENVOI.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</strong> par
+        commande, quel que soit le nombre de documents. Elle n&apos;est proposée qu&apos;à
+        destination de la France.
+      </p>
+      <p>
         Les prix barrés affichés sur le site correspondent au tarif effectivement pratiqué
         antérieurement à l&apos;opération promotionnelle en cours, conformément à l&apos;article
         L112-1-1 du code de la consommation.
@@ -88,6 +94,12 @@ export default function CGV() {
         La traduction est livrée sous <strong>24 à 48 heures ouvrées</strong> à compter de
         l&apos;encaissement du paiement, par courrier électronique, à l&apos;adresse indiquée lors
         de la commande. Les samedis, dimanches et jours fériés ne sont pas comptés.
+      </p>
+      <p>
+        Si vous avez choisi l&apos;envoi de l&apos;original par voie postale, celui-ci est expédié
+        en courrier suivi dans les 48 heures suivant la traduction. La livraison numérique
+        n&apos;en est pas retardée : vous disposez du document certifié par courrier électronique
+        sans attendre le courrier.
       </p>
       <p>
         En cas de dépassement du délai annoncé, vous pouvez nous mettre en demeure d&apos;exécuter

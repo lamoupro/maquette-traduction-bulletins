@@ -29,8 +29,13 @@ export type Commande = {
   langues: { source: string; cible: string };
   quantite: number;
   montant: number;
+  envoiPostal?: boolean;
+  adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
   remarque?: string;
 };
+
+const montantLisible = (n: number) =>
+  n.toLocaleString('fr-FR', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2 });
 
 const echapper = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -78,12 +83,23 @@ function messageClient(c: Commande) {
            <td style="padding:12px 0;font-size:0.9rem;text-align:right;font-weight:700;">${echapper(c.reference)}</td></tr>
        <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Documents</td>
            <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.quantite} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
+       ${
+         c.envoiPostal && c.adressePostale
+           ? `<tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Envoi papier</td>
+                  <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${echapper(c.adressePostale.adresse)}<br>${echapper(c.adressePostale.codePostal)} ${echapper(c.adressePostale.ville)}</td></tr>`
+           : ''
+       }
        <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Montant</td>
-           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;font-weight:700;">${c.montant} €</td></tr>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;font-weight:700;">${montantLisible(c.montant)} €</td></tr>
      </table>` +
     ligne(
       `<strong>Livraison sous 24 à 48 h ouvrées.</strong> Vous recevrez le document certifié à cette même adresse.`,
     ) +
+    (c.envoiPostal
+      ? ligne(
+          `L'exemplaire papier tamponné et signé part par courrier suivi dans les 48 h qui suivent la traduction. Vous n'avez pas à l'attendre pour utiliser la version numérique.`,
+        )
+      : '') +
     ligne(
       `<span style="color:#55647C;font-size:0.86rem;">Une question ? Répondez simplement à ce message en rappelant votre référence.</span>`,
     );
@@ -98,11 +114,19 @@ function messageClient(c: Commande) {
 function messageInterne(c: Commande, nbFichiers: number) {
   const corps =
     ligne(
-      `<strong>${c.quantite} document${c.quantite > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${c.montant} €</strong>`,
+      `<strong>${c.quantite} document${c.quantite > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${montantLisible(c.montant)} €</strong>`,
     ) +
     ligne(
       `${echapper(c.client.prenom)} ${echapper(c.client.nom)} — <a href="mailto:${echapper(c.client.email)}" style="color:#1359B8;">${echapper(c.client.email)}</a>`,
     ) +
+    (c.envoiPostal && c.adressePostale
+      ? `<p style="margin:12px 0;padding:10px 12px;background:#E8F0FC;border-left:3px solid #1359B8;border-radius:0 6px 6px 0;font-size:0.9rem;">
+           <strong>Envoi papier à expédier</strong><br>
+           ${echapper(c.client.prenom)} ${echapper(c.client.nom)}<br>
+           ${echapper(c.adressePostale.adresse)}<br>
+           ${echapper(c.adressePostale.codePostal)} ${echapper(c.adressePostale.ville)}
+         </p>`
+      : '') +
     (c.remarque
       ? `<p style="margin:12px 0;padding:10px 12px;background:#F5F8FC;border-radius:6px;font-size:0.9rem;">${echapper(c.remarque)}</p>`
       : '') +
@@ -114,7 +138,7 @@ function messageInterne(c: Commande, nbFichiers: number) {
      </p>`;
 
   return {
-    subject: `Commande ${c.reference} — ${c.quantite} doc. — ${c.montant} €`,
+    subject: `${c.envoiPostal ? '📮 ' : ''}Commande ${c.reference} — ${c.quantite} doc. — ${montantLisible(c.montant)} €`,
     html: gabarit(`Nouvelle commande ${echapper(c.reference)}`, corps),
   };
 }

@@ -19,6 +19,8 @@ type Fiche = {
   langues: { source: string; cible: string };
   quantite: number;
   montant: number;
+  envoiPostal?: boolean;
+  adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
   remarque?: string;
   cles?: string[];
 };
@@ -175,8 +177,32 @@ export default async function Admin({
             </p>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
               {f.langues.source} → {f.langues.cible} · {f.quantite} document
-              {f.quantite > 1 ? 's' : ''} · {f.montant} €
+              {f.quantite > 1 ? 's' : ''} ·{' '}
+              {f.montant.toLocaleString('fr-FR', {
+                minimumFractionDigits: Number.isInteger(f.montant) ? 0 : 2,
+              })}{' '}
+              €
             </p>
+            {f.envoiPostal && f.adressePostale && (
+              <p
+                style={{
+                  margin: '8px 0 0',
+                  fontSize: '0.88rem',
+                  background: 'var(--brass-tint)',
+                  borderLeft: '3px solid var(--brass)',
+                  borderRadius: '0 6px 6px 0',
+                  padding: '8px 10px',
+                }}
+              >
+                <strong>📮 Envoi papier</strong>
+                <br />
+                {f.client.prenom} {f.client.nom}
+                <br />
+                {f.adressePostale.adresse}
+                <br />
+                {f.adressePostale.codePostal} {f.adressePostale.ville}
+              </p>
+            )}
             {f.remarque && (
               <p
                 style={{

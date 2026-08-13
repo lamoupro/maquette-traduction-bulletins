@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { MAX_DOCS, PRIX_OFFRE } from '@/lib/data';
+import { MAX_DOCS, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
 import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
 import { envoyerEmails } from '@/lib/email';
 
@@ -8,6 +8,7 @@ export const runtime = 'nodejs';
 const TAILLE_MAX = 10 * 1024 * 1024; // 10 Mo par fichier
 const TYPES_OK = ['application/pdf', 'image/'];
 const emailValide = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+const cpValide = (v: string) => /^\d{5}$/.test(v.trim());
 
 /** Référence lisible : PT-AAMMJJ-XXXX */
 function reference() {
@@ -33,6 +34,10 @@ export async function POST(requete: Request) {
   const cible = texte('cible');
   const remarque = texte('remarque').slice(0, 2000);
   const moyen = texte('moyen');
+  const envoiPostal = texte('envoiPostal') === '1';
+  const adresse = texte('adresse').slice(0, 200);
+  const codePostal = texte('codePostal').slice(0, 5);
+  const ville = texte('ville').slice(0, 100);
   const fichiers = donnees.getAll('fichiers').filter((f): f is File => f instanceof File);
 
   // Apple Pay fournit lui-même le nom et l'e-mail : la feuille Apple les
@@ -56,11 +61,17 @@ export async function POST(requete: Request) {
   if (contactRequis && (!emailValide(email) || !prenom || !nom)) {
     return NextResponse.json({ erreur: 'Coordonnées incomplètes.' }, { status: 400 });
   }
+  // L'adresse est exigée quel que soit le moyen de paiement : sans elle, on
+  // encaisserait un envoi qu'on ne saurait pas expédier.
+  if (envoiPostal && (!adresse || !cpValide(codePostal) || !ville)) {
+    return NextResponse.json({ erreur: 'Adresse postale incomplète.' }, { status: 400 });
+  }
 
   // Le montant est recalculé côté serveur : ne jamais faire confiance au prix
   // envoyé par le navigateur, il est modifiable par le visiteur.
   const quantite = Math.max(1, Math.min(MAX_DOCS, Number(donnees.get('quantite')) || fichiers.length));
-  const montant = quantite * PRIX_OFFRE;
+  // L'envoi papier est facturé une fois par commande, pas par document.
+  const montant = quantite * PRIX_OFFRE + (envoiPostal ? PRIX_ENVOI : 0);
 
   const commande = {
     reference: reference(),
@@ -70,6 +81,8 @@ export async function POST(requete: Request) {
     quantite,
     montant,
     moyen,
+    envoiPostal,
+    adressePostale: envoiPostal ? { adresse, codePostal, ville } : null,
     remarque,
     fichiers: fichiers.map((f) => ({ nom: f.name, taille: f.size, type: f.type })),
   };

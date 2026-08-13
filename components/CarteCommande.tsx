@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MAX_DOCS, PRIX_NORMAL, PRIX_OFFRE } from '@/lib/data';
+import { MAX_DOCS, PRIX_ENVOI, PRIX_NORMAL, PRIX_OFFRE } from '@/lib/data';
 
 const LANGUES = ['Français', 'Anglais', 'Espagnol', 'Arabe', 'Portugais', 'Italien', 'Allemand'];
 
-const eur = (n: number) => `${n.toLocaleString('fr-FR')} €`;
+// Les montants ronds restent sans décimale — « 25 € », pas « 25,00 € ».
+const eur = (n: number) =>
+  `${n.toLocaleString('fr-FR', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2 })} €`;
 const emailValide = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+const cpValide = (v: string) => /^\d{5}$/.test(v.trim());
 
 export default function CarteCommande() {
   const [source, setSource] = useState('Français');
@@ -17,6 +20,10 @@ export default function CarteCommande() {
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [remarque, setRemarque] = useState('');
+  const [postal, setPostal] = useState(false);
+  const [adresse, setAdresse] = useState('');
+  const [codePostal, setCodePostal] = useState('');
+  const [ville, setVille] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState('');
   const [reference, setReference] = useState<string | null>(null);
@@ -34,8 +41,13 @@ export default function CarteCommande() {
 
   const avant = qte * PRIX_NORMAL;
   const apres = qte * PRIX_OFFRE;
+  // L'envoi papier est facturé une fois par commande, pas par document :
+  // trois bulletins tiennent dans la même enveloppe.
+  const total = apres + (postal ? PRIX_ENVOI : 0);
   const contactComplet = emailValide(email) && prenom.trim() !== '' && nom.trim() !== '';
-  const peutPayer = fichiers.length > 0 && contactComplet && !envoi;
+  const adresseComplete =
+    !postal || (adresse.trim() !== '' && cpValide(codePostal) && ville.trim() !== '');
+  const peutPayer = fichiers.length > 0 && contactComplet && adresseComplete && !envoi;
 
   const etape = contactComplet && fichiers.length > 0 ? 3 : fichiers.length > 0 ? 2 : 1;
   const libelleEtape = ['Déposez vos bulletins', 'Vos coordonnées', 'Prêt à payer'][etape - 1];
@@ -72,12 +84,17 @@ export default function CarteCommande() {
       donnees.append('source', source);
       donnees.append('cible', cible);
       donnees.append('quantite', String(qte));
-      donnees.append('montant', String(apres));
       donnees.append('email', email);
       donnees.append('prenom', prenom);
       donnees.append('nom', nom);
       donnees.append('remarque', remarque);
       donnees.append('moyen', moyen);
+      donnees.append('envoiPostal', postal ? '1' : '0');
+      if (postal) {
+        donnees.append('adresse', adresse);
+        donnees.append('codePostal', codePostal);
+        donnees.append('ville', ville);
+      }
       fichiers.forEach((f) => donnees.append('fichiers', f));
 
       const r = await fetch('/api/commande', { method: 'POST', body: donnees });
@@ -117,6 +134,14 @@ export default function CarteCommande() {
             </svg>
             Traduction livrée sous 24 à 48 h
           </div>
+          {postal && (
+            <div>
+              <svg viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
+              </svg>
+              Original papier envoyé à {ville || 'votre adresse'}
+            </div>
+          )}
         </div>
         <p className="toast">
           Le paiement sera branché à l’étape suivante : votre dossier est enregistré, rien n’a été
@@ -221,6 +246,13 @@ export default function CarteCommande() {
           </span>
         </div>
 
+        {postal && (
+          <div className="ligne-sup">
+            <span>Envoi de l&apos;original par courrier</span>
+            <span className="tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
+          </div>
+        )}
+
         {/* Le <label> ouvre nativement le sélecteur : pas d'appel JS
             supplémentaire, qui provoquait une double ouverture annulée par
             Safari iOS. Le filtre accepte les photos iPhone (HEIC). */}
@@ -294,6 +326,62 @@ export default function CarteCommande() {
               value={remarque}
               onChange={(e) => setRemarque(e.target.value)}
             />
+
+            {/* Proposé seulement ici, une fois le bulletin déposé : présenté
+                d'emblée, un supplément payant ferait hésiter avant même que
+                le visiteur ait commencé. */}
+            <label className="option-postal">
+              <input
+                type="checkbox"
+                checked={postal}
+                onChange={(e) => setPostal(e.target.checked)}
+              />
+              <span className="op-txt">
+                <span className="op-titre">Recevoir aussi l&apos;original par courrier</span>
+                <span className="op-sub">
+                  Exemplaire papier tamponné et signé, envoi suivi en France
+                </span>
+              </span>
+              <span className="op-prix tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
+            </label>
+
+            {postal && (
+              <div className="adresse-bloc">
+                <input
+                  type="text"
+                  autoComplete="street-address"
+                  placeholder="Numéro et rue"
+                  value={adresse}
+                  onChange={(e) => setAdresse(e.target.value)}
+                  required
+                />
+                <div className="duo duo-cp">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    placeholder="Code postal"
+                    maxLength={5}
+                    value={codePostal}
+                    onChange={(e) => setCodePostal(e.target.value.replace(/\D/g, ''))}
+                    aria-invalid={codePostal !== '' && !cpValide(codePostal)}
+                    required
+                  />
+                  <input
+                    type="text"
+                    autoComplete="address-level2"
+                    placeholder="Ville"
+                    value={ville}
+                    onChange={(e) => setVille(e.target.value)}
+                    required
+                  />
+                </div>
+                <p className="aide">
+                  L&apos;original part sous 48 h après la traduction. Vous recevez de toute façon
+                  la version numérique par e-mail, sans attendre le courrier.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -303,7 +391,7 @@ export default function CarteCommande() {
           disabled={!peutPayer}
           onClick={() => commander('carte')}
         >
-          {envoi ? 'Envoi en cours…' : `Payer ${eur(apres)} et faire traduire ${qte > 1 ? 'mes bulletins' : 'mon bulletin'}`}
+          {envoi ? 'Envoi en cours…' : `Payer ${eur(total)} et faire traduire ${qte > 1 ? 'mes bulletins' : 'mon bulletin'}`}
         </button>
 
         <div className="pay-divider">ou</div>
@@ -349,9 +437,14 @@ export default function CarteCommande() {
 
       <div className={`sticky-cta${cachetVisible ? ' is-visible' : ''}`}>
         <div>
-          <span className="sp-amount tabular">{apres.toLocaleString('fr-FR')}&nbsp;€</span>
+          <span className="sp-amount tabular">
+            {total.toLocaleString('fr-FR', { minimumFractionDigits: postal ? 2 : 0 })}&nbsp;€
+          </span>
+          {/* Le prix barré ne s'affiche plus dès qu'un supplément s'ajoute :
+              comparer 35 € de traduction à un total incluant le port serait
+              un prix de référence trompeur. */}
           <span className="sp-label">
-            <s>{eur(avant)}</s> · tout compris
+            {postal ? 'envoi de l’original inclus' : <><s>{eur(avant)}</s> · tout compris</>}
           </span>
         </div>
         <button
