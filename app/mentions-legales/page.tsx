@@ -120,12 +120,12 @@ export default function MentionsLegales() {
         et y répondons dans les meilleurs délais.
       </p>
 
-      <h2>Médiation de la consommation</h2>
+      <h2>Réclamations et litiges</h2>
       <p>
-        Conformément à l&apos;article L612-1 du code de la consommation, vous pouvez recourir
-        gratuitement à un médiateur de la consommation en vue de la résolution amiable d&apos;un
-        litige. Les coordonnées du médiateur dont nous relevons figurent à l&apos;article
-        correspondant des <a href="/cgv">conditions générales de vente</a>.
+        Toute réclamation peut être adressée à <a href={`mailto:${e.email}`}>{e.email}</a>. Une
+        garantie de remboursement sans justification est prévue à l&apos;article 8 des{' '}
+        <a href="/cgv">conditions générales de vente</a>. Les voies de recours, dont la médiation
+        de la consommation, sont détaillées à l&apos;article 12 des mêmes conditions.
       </p>
     </PageLegale>
   );
