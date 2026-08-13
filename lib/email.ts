@@ -31,9 +31,17 @@ const gabarit = (titre: string, corps: string) => `<!doctype html>
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border:1px solid #DDE4EE;border-radius:10px;">
         <tr><td style="padding:26px 28px;">
-          <p style="margin:0 0 18px;font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;">
-            <span style="color:#10233C;">pro</span><span style="color:#1359B8;">translayte</span>
-          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+            <tr>
+              <td style="padding-right:9px;vertical-align:middle;">
+                <img src="${SITE}/logo-mail.png" width="28" height="28" alt=""
+                     style="display:block;border-radius:6px;">
+              </td>
+              <td style="vertical-align:middle;font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;">
+                <span style="color:#10233C;">pro</span><span style="color:#1359B8;">translayte</span>
+              </td>
+            </tr>
+          </table>
           <h1 style="margin:0 0 14px;font-size:1.15rem;line-height:1.3;">${titre}</h1>
           ${corps}
         </td></tr>
