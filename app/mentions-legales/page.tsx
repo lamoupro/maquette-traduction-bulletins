@@ -24,10 +24,7 @@ export default function MentionsLegales() {
         </dd>
 
         <dt>Enseigne commerciale</dt>
-        <dd>
-          {e.nomCommercial}
-          {e.nomDeclare ? ` (${e.nomDeclare})` : null}
-        </dd>
+        <dd>{e.nomCommercial}</dd>
 
         <dt>Forme juridique</dt>
         <dd>

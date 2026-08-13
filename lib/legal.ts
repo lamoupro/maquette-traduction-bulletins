@@ -22,7 +22,11 @@ export const ENTREPRISE = {
      site à une personne identifiable. */
   raisonSociale: 'Martin Lamou',
 
-  /* Nom d'usage déclaré au répertoire, distinct de l'enseigne du site. */
+  /* Nom d'usage déclaré au répertoire SIRENE. VOLONTAIREMENT NON AFFICHÉ :
+     pour un entrepreneur individuel, seule la dénomination — le nom de la
+     personne — est obligatoire. Faire figurer « Mouvement Précis de
+     Performance » sur un site de traduction sème le doute sans rien
+     apporter. Conservé ici pour mémoire. */
   nomDeclare: 'Mouvement Précis de Performance',
 
   /* « SASU », « SARL », « EURL », « Entrepreneur individuel »… */
@@ -33,10 +37,10 @@ export const ENTREPRISE = {
   capital: null as number | null,
 
   /* Adresse du siège social, une ligne par élément.
-     LAISSÉ VIDE VOLONTAIREMENT : le siège déclaré est un domicile privé.
-     Publier une adresse personnelle sur un site marchand est une décision
-     qui appartient à Martin, pas au code. Voir la note en fin de fichier. */
-  adresse: [A_REMPLIR, A_REMPLIR] as string[],
+     C'est un domicile privé. Martin a explicitement choisi de le publier le
+     13 août 2026, faute de domiciliation. À remplacer dès qu'une adresse
+     professionnelle existe — en particulier avant toute campagne payante. */
+  adresse: ['Appartement 43 — 43 impasse de Soupetard', '31500 Toulouse'] as string[],
 
   /* 14 chiffres. Le SIREN (les 9 premiers) en est déduit automatiquement. */
   siret: '85053974300029',
