@@ -1,8 +1,10 @@
+import Link from 'next/link';
 import BandeauOffre from '@/components/BandeauOffre';
 import Carrousel from '@/components/Carrousel';
 import CarteCommande from '@/components/CarteCommande';
 import Comparateur from '@/components/Comparateur';
 import NotificationAchat from '@/components/NotificationAchat';
+import Logo from '@/components/Logo';
 import { AVIS } from '@/lib/data';
 
 const Coche = () => (
@@ -15,17 +17,6 @@ const Etoile = () => (
   <svg viewBox="0 0 20 20" fill="currentColor">
     <path d="M10 1.6l2.5 5.1 5.6.8-4 4 .9 5.6L10 14.4l-5 2.7.9-5.6-4-4 5.6-.8z" />
   </svg>
-);
-
-const Logo = () => (
-  <div className="logo">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img className="seal" src="/logo.svg" width={30} height={30} alt="" aria-hidden="true" />
-    <span className="lg">
-      <span className="lg-a">pro</span>
-      <span className="lg-b">translayte</span>
-    </span>
-  </div>
 );
 
 /* Les logos partenaires sont triplés : le carrousel maintient la position dans
@@ -318,22 +309,22 @@ export default function Page() {
             <div>
               <h4>Entreprise</h4>
               <ul>
-                <li><a href="#">À propos</a></li>
-                <li><a href="#">Mentions légales</a></li>
-                <li><a href="#">CGV</a></li>
+                <li><Link href="/mentions-legales">Mentions légales</Link></li>
+                <li><Link href="/cgv">CGV</Link></li>
+                <li><Link href="/confidentialite">Confidentialité</Link></li>
               </ul>
             </div>
             <div>
               <h4>Support</h4>
               <ul>
                 <li><a href="#faq">FAQ</a></li>
-                <li><a href="#">Contact</a></li>
-                <li><a href="#">Suivi de dossier</a></li>
+                <li><Link href="/contact">Contact</Link></li>
+                <li><Link href="/contact#suivre-un-dossier">Suivi de dossier</Link></li>
               </ul>
             </div>
           </div>
           <div className="foot-bottom">
-            <span>© 2026 protranslayte — contenu de démonstration, à personnaliser.</span>
+            <span>© 2026 Protranslayte</span>
             <span className="pay-icons">
               <span>VISA</span>
               <span>MASTERCARD</span>
