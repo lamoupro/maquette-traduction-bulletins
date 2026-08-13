@@ -7,7 +7,7 @@ import { Resend } from 'resend';
    transiter des données personnelles de mineurs par un service tiers
    ajouterait une exposition inutile. */
 
-const EXPEDITEUR = process.env.EMAIL_EXPEDITEUR ?? 'protranslayte <contact@protranslayte.com>';
+const EXPEDITEUR = process.env.EMAIL_EXPEDITEUR ?? 'Protranslayte <contact@protranslayte.com>';
 const INTERNE = process.env.EMAIL_INTERNE ?? 'lamoupro@gmail.com';
 const SITE = process.env.SITE_URL ?? 'https://protranslayte.com';
 
@@ -38,7 +38,7 @@ const gabarit = (titre: string, corps: string) => `<!doctype html>
                      style="display:block;border-radius:6px;">
               </td>
               <td style="vertical-align:middle;font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;">
-                <span style="color:#10233C;">pro</span><span style="color:#1359B8;">translayte</span>
+                <span style="color:#10233C;">Pro</span><span style="color:#1359B8;">translayte</span>
               </td>
             </tr>
           </table>
@@ -47,7 +47,7 @@ const gabarit = (titre: string, corps: string) => `<!doctype html>
         </td></tr>
       </table>
       <p style="max-width:520px;margin:16px auto 0;font-size:0.74rem;color:#55647C;text-align:center;">
-        protranslayte — traduction assermentée de bulletins de notes
+        Protranslayte — traduction assermentée de bulletins de notes
       </p>
     </td></tr>
   </table>
