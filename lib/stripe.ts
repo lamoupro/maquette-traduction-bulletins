@@ -73,6 +73,15 @@ export async function creerSession(opts: {
     metadata: { reference: opts.reference },
     payment_intent_data: { metadata: { reference: opts.reference } },
     locale: 'fr',
+    /* Ouvre le champ « code promotionnel » dans le formulaire.
+
+       Sert d'abord aux essais en conditions réelles : un code à usage unique
+       permet de valider tout le tunnel pour quelques centimes sans toucher au
+       tarif affiché. Il servira ensuite aux opérations commerciales.
+
+       Aucun risque d'abus : un code Stripe n'existe que si on l'a créé, et
+       chacun porte sa limite d'utilisations et sa date d'expiration. */
+    allow_promotion_codes: true,
     return_url: `${SITE}/commande/retour?session_id={CHECKOUT_SESSION_ID}`,
   });
 }

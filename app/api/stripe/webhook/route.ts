@@ -52,13 +52,18 @@ async function traiter(reference: string, session: Stripe.Checkout.Session) {
 
   await ecrireFiche(reference, paye);
 
-  // Le montant réellement encaissé fait foi. S'il diverge de ce qu'on avait
-  // calculé, on veut le voir dans les journaux plutôt que le découvrir sur
-  // un relevé bancaire.
-  if (Math.abs(paye.stripe.montantEncaisse - commande.montant) > 0.01) {
+  /* Le montant réellement encaissé fait foi. Un écart est normal quand un
+     code promotionnel a été appliqué — Stripe le déduit après notre calcul.
+     On le trace tout de même : c'est la seule façon de repérer un jour un
+     encaissement qui ne correspond à rien. */
+  const remise = (session.total_details?.amount_discount ?? 0) / 100;
+  const attendu = commande.montant - remise;
+  if (Math.abs(paye.stripe.montantEncaisse - attendu) > 0.01) {
     console.error(
-      `[webhook] ${reference} : encaissé ${paye.stripe.montantEncaisse} € pour ${commande.montant} € attendus`,
+      `[webhook] ${reference} : encaissé ${paye.stripe.montantEncaisse} € pour ${attendu} € attendus (remise ${remise} €)`,
     );
+  } else if (remise > 0) {
+    console.log(`[webhook] ${reference} : remise de ${remise} € appliquée`);
   }
 
   await envoyerEmails(paye, paye.fichiers?.length ?? paye.quantite);
