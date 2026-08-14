@@ -63,7 +63,9 @@ export async function creerSession(opts: {
   }
 
   return stripe().checkout.sessions.create({
-    ui_mode: 'embedded',
+    /* « embedded_page » et non « embedded » : les versions récentes de l'API
+       ont renommé ce mode, et l'ancien nom est désormais refusé. */
+    ui_mode: 'embedded_page',
     mode: 'payment',
     line_items: lignes,
     customer_email: opts.email || undefined,
