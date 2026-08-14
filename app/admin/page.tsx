@@ -19,6 +19,8 @@ type Fiche = {
   langues: { source: string; cible: string };
   quantite: number;
   montant: number;
+  statut?: 'en_attente_paiement' | 'payee';
+  payeLe?: string;
   envoiPostal?: boolean;
   adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
   remarque?: string;
@@ -166,7 +168,25 @@ export default async function Admin({
                 alignItems: 'baseline',
               }}
             >
-              <strong style={{ fontFamily: 'var(--font-mono)' }}>{f.reference}</strong>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <strong style={{ fontFamily: 'var(--font-mono)' }}>{f.reference}</strong>
+                {/* Un dossier non payé n'est pas une commande : il ne doit
+                    surtout pas partir en traduction. */}
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    background: f.statut === 'payee' ? 'var(--verified-tint)' : '#FDE8E8',
+                    color: f.statut === 'payee' ? 'var(--verified)' : '#A32020',
+                  }}
+                >
+                  {f.statut === 'payee' ? 'Payée' : 'Non payée'}
+                </span>
+              </span>
               <span style={{ color: 'var(--ink-soft)', fontSize: '0.82rem' }}>
                 {new Date(f.recuLe).toLocaleString('fr-FR')}
                 {perimee(f.recuLe) && ' · à supprimer'}

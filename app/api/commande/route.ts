@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MAX_DOCS, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
 import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
-import { envoyerEmails } from '@/lib/email';
+import { creerSession, stripeConfigure } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
 
@@ -40,9 +40,14 @@ export async function POST(requete: Request) {
   const ville = texte('ville').slice(0, 100);
   const fichiers = donnees.getAll('fichiers').filter((f): f is File => f instanceof File);
 
-  // Apple Pay fournit lui-même le nom et l'e-mail : la feuille Apple les
-  // renverra à l'étape paiement, on n'exige donc pas le formulaire ici.
-  const contactRequis = moyen !== 'applepay';
+  /* Les coordonnées sont désormais exigées quel que soit le moyen choisi.
+
+     Auparavant Apple Pay en était dispensé, parce qu'il fournit lui-même le
+     nom et l'e-mail. Ce n'est plus tenable : c'est nous qui livrons la
+     traduction par courrier électronique, et il nous faut l'adresse avant
+     même d'ouvrir le paiement — sinon un dossier payé se retrouverait sans
+     destinataire. Apple Pay reste proposé, à l'intérieur du formulaire. */
+  const contactRequis = true;
 
   if (fichiers.length === 0) {
     return NextResponse.json({ erreur: 'Aucun document reçu.' }, { status: 400 });
@@ -76,6 +81,9 @@ export async function POST(requete: Request) {
   const commande = {
     reference: reference(),
     recuLe: new Date().toISOString(),
+    // Tant que Stripe n'a pas confirmé, le dossier existe mais n'est pas payé.
+    // C'est le webhook qui fera basculer ce statut, jamais le navigateur.
+    statut: 'en_attente_paiement' as const,
     client: { email, prenom, nom },
     langues: { source, cible },
     quantite,
@@ -113,10 +121,38 @@ export async function POST(requete: Request) {
     );
   }
 
-  // Les e-mails ne bloquent pas la réponse : le dossier est déjà enregistré,
-  // un envoi manqué se rattrape, une commande perdue non.
-  await envoyerEmails(commande, fichiers.length);
+  // Les e-mails ne partent plus ici : ils annonceraient une commande que le
+  // client n'a pas encore payée. C'est le webhook Stripe qui les déclenche,
+  // une fois l'encaissement confirmé.
+  if (!stripeConfigure()) {
+    console.error('[commande] STRIPE_SECRET_KEY absente, paiement impossible');
+    return NextResponse.json(
+      { erreur: 'Le paiement est momentanément indisponible. Réessayez dans quelques minutes.' },
+      { status: 503 },
+    );
+  }
 
-  // TODO — étape suivante : paiement Stripe.
-  return NextResponse.json({ reference: commande.reference, montant });
+  try {
+    const session = await creerSession({
+      reference: commande.reference,
+      quantite,
+      envoiPostal,
+      email,
+      source,
+      cible,
+    });
+    return NextResponse.json({
+      reference: commande.reference,
+      montant,
+      clientSecret: session.client_secret,
+    });
+  } catch (e) {
+    console.error('[commande] échec de la session Stripe', e);
+    // Les fichiers sont déjà en lieu sûr : on peut réessayer le paiement sans
+    // redemander au client de tout redéposer.
+    return NextResponse.json(
+      { erreur: "Le paiement n'a pas pu être initialisé. Réessayez." },
+      { status: 502 },
+    );
+  }
 }

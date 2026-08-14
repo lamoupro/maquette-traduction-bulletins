@@ -466,3 +466,10 @@
   .ligne-sup{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
     font-size:0.84rem;color:var(--ink-soft);border-bottom:1px dashed var(--rule);padding:10px 0;}
   .ligne-sup .tabular{font-weight:600;color:var(--ink);}
+
+  /* ---------- FORMULAIRE STRIPE INTÉGRÉ ----------
+     Checkout s'affiche dans une iframe : on lui laisse la largeur de la
+     carte et on ne tente pas d'habiller son contenu, qui se règle depuis le
+     tableau de bord Stripe. */
+  .stripe-checkout{margin:2px 0;min-height:340px;}
+  .stripe-checkout iframe{width:100% !important;}

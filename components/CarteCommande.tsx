@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MAX_DOCS, PRIX_ENVOI, PRIX_NORMAL, PRIX_OFFRE } from '@/lib/data';
+import PaiementStripe from './PaiementStripe';
 
 const LANGUES = ['Français', 'Anglais', 'Espagnol', 'Arabe', 'Portugais', 'Italien', 'Allemand'];
 
@@ -27,6 +28,7 @@ export default function CarteCommande() {
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState('');
   const [reference, setReference] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [dossier, setDossier] = useState('—');
 
   const refFichier = useRef<HTMLInputElement>(null);
@@ -100,7 +102,11 @@ export default function CarteCommande() {
       const r = await fetch('/api/commande', { method: 'POST', body: donnees });
       const json = await r.json();
       if (!r.ok) throw new Error(json.erreur || 'Envoi impossible');
+      if (!json.clientSecret) throw new Error("Le paiement n'a pas pu être initialisé.");
+      // Les documents sont déposés, le paiement peut commencer : on remplace
+      // le formulaire par Checkout, dans la même carte.
       setReference(json.reference);
+      setClientSecret(json.clientSecret);
     } catch (e) {
       setMessage(
         e instanceof Error ? e.message : 'Une erreur est survenue. Réessayez dans un instant.',
@@ -108,6 +114,38 @@ export default function CarteCommande() {
     } finally {
       setEnvoi(false);
     }
+  }
+
+  // Paiement en cours : Checkout prend toute la carte. Le visiteur reste sur
+  // protranslayte.com, seul le formulaire vient de Stripe.
+  if (reference && clientSecret) {
+    return (
+      <div className="dossier" id="dossier" ref={refCarte}>
+        <div className="dossier-top">
+          <span className="eyebrow">Paiement sécurisé</span>
+          <span className="ref tabular">DOSSIER N° {reference}</span>
+        </div>
+        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
+          Vos {fichiers.length > 1 ? 'documents sont déposés' : 'document est déposé'}. Il ne reste
+          qu’à régler {eur(total)}.
+        </p>
+        <PaiementStripe clientSecret={clientSecret} />
+        <div className="microtrust">
+          <div>
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
+            </svg>
+            Paiement chiffré, traité par Stripe
+          </div>
+          <div>
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
+            </svg>
+            Satisfait ou remboursé 30 jours
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (reference) {
@@ -399,13 +437,15 @@ export default function CarteCommande() {
 
         <div className="pay-divider">ou</div>
 
-        {/* Apple Pay renvoie lui-même le nom et l'e-mail : exiger le formulaire
-            avant supprimerait son seul intérêt, le geste unique. */}
+        {/* Apple Pay mène au même formulaire, où il est proposé en premier sur
+            les appareils Apple. Il exige donc les mêmes coordonnées : la
+            traduction se livre par e-mail, il nous faut l'adresse avant le
+            paiement, pas après. */}
         <button
           className="apple-pay-btn"
           type="button"
           aria-label="Payer avec Apple Pay"
-          disabled={fichiers.length === 0 || envoi}
+          disabled={!peutPayer}
           onClick={() => commander('applepay')}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
