@@ -3,7 +3,6 @@ import BandeauOffre from '@/components/BandeauOffre';
 import Carrousel from '@/components/Carrousel';
 import CarteCommande from '@/components/CarteCommande';
 import Comparateur from '@/components/Comparateur';
-import NotificationAchat from '@/components/NotificationAchat';
 import Logo from '@/components/Logo';
 import { AVIS } from '@/lib/data';
 
@@ -285,7 +284,14 @@ export default function Page() {
         </div>
       </section>
 
-      <NotificationAchat />
+      {/* Notifications d'achat retirées du site le 13 août 2026, sur décision
+          de Martin. Elles reposaient sur 195 acheteurs fictifs : une preuve
+          sociale inventée n'a pas sa place sur un service qui vend de la
+          certification officielle.
+
+          Le composant et la liste ACHETEURS restent en place, intacts. Pour
+          les réactiver, il suffit de remettre <NotificationAchat /> ici — mais
+          il faudra d'abord les brancher sur les vraies commandes. */}
 
       <footer className="site">
         <div className="wrap">
