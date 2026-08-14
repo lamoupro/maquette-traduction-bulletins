@@ -35,8 +35,22 @@ async function traiter(reference: string, session: Stripe.Checkout.Session) {
     return;
   }
 
+  /* En Apple Pay, le nom n'a pas été saisi sur le site : c'est la feuille
+     Apple qui le fournit, et Stripe nous le transmet ici. On complète le
+     dossier plutôt que de laisser une fiche anonyme à l'administration. */
+  const client = { ...commande.client };
+  if (!client.prenom && !client.nom && session.customer_details?.name) {
+    const parts = session.customer_details.name.trim().split(/\s+/);
+    client.prenom = parts.shift() ?? '';
+    client.nom = parts.join(' ');
+  }
+  if (!client.email && session.customer_details?.email) {
+    client.email = session.customer_details.email;
+  }
+
   const paye = {
     ...commande,
+    client,
     statut: 'payee' as const,
     payeLe: new Date().toISOString(),
     stripe: {

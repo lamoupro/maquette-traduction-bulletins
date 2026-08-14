@@ -482,15 +482,14 @@ export default function CarteCommande() {
 
         <div className="pay-divider">ou</div>
 
-        {/* Apple Pay mène au même formulaire, où il est proposé en premier sur
-            les appareils Apple. Il exige donc les mêmes coordonnées : la
-            traduction se livre par e-mail, il nous faut l'adresse avant le
-            paiement, pas après. */}
+        {/* Apple Pay n'attend que l'adresse électronique : la feuille Apple
+            fournit le nom, et il figure de toute façon sur les bulletins.
+            Exiger prénom et nom avant supprimerait son seul intérêt. */}
         <button
           className="apple-pay-btn"
           type="button"
           aria-label="Payer avec Apple Pay"
-          disabled={!peutPayer}
+          disabled={fichiers.length === 0 || !emailPret || !adresseComplete || envoi}
           onClick={() => commander('applepay')}
         >
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

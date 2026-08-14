@@ -40,14 +40,15 @@ export async function POST(requete: Request) {
   const ville = texte('ville').slice(0, 100);
   const fichiers = donnees.getAll('fichiers').filter((f): f is File => f instanceof File);
 
-  /* Les coordonnées sont désormais exigées quel que soit le moyen choisi.
+  /* L'adresse électronique est exigée dans tous les cas : c'est par elle que
+     la traduction est livrée, et un dossier payé sans destinataire n'a aucun
+     sens.
 
-     Auparavant Apple Pay en était dispensé, parce qu'il fournit lui-même le
-     nom et l'e-mail. Ce n'est plus tenable : c'est nous qui livrons la
-     traduction par courrier électronique, et il nous faut l'adresse avant
-     même d'ouvrir le paiement — sinon un dossier payé se retrouverait sans
-     destinataire. Apple Pay reste proposé, à l'intérieur du formulaire. */
-  const contactRequis = true;
+     Le nom, lui, n'est indispensable qu'au paiement par carte. En Apple Pay,
+     la feuille Apple le fournit — et de toute façon il figure sur les
+     bulletins déposés. L'exiger avant d'autoriser le geste unique
+     supprimerait le seul intérêt d'Apple Pay. */
+  const identiteRequise = moyen !== 'applepay';
 
   if (fichiers.length === 0) {
     return NextResponse.json({ erreur: 'Aucun document reçu.' }, { status: 400 });
@@ -63,7 +64,10 @@ export async function POST(requete: Request) {
       return NextResponse.json({ erreur: `« ${f.name} » n'est ni un PDF ni une image.` }, { status: 400 });
     }
   }
-  if (contactRequis && (!emailValide(email) || !prenom || !nom)) {
+  if (!emailValide(email)) {
+    return NextResponse.json({ erreur: 'Adresse e-mail invalide.' }, { status: 400 });
+  }
+  if (identiteRequise && (!prenom || !nom)) {
     return NextResponse.json({ erreur: 'Coordonnées incomplètes.' }, { status: 400 });
   }
   // L'adresse est exigée quel que soit le moyen de paiement : sans elle, on
