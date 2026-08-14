@@ -26,6 +26,29 @@ const SITE = process.env.SITE_URL ?? 'https://protranslayte.com';
 /** Stripe raisonne en centimes : 25 € s'écrit 2500. */
 const centimes = (euros: number) => Math.round(euros * 100);
 
+/* Intention de paiement, pour le geste unique.
+
+   Apple Pay et Google Pay ne passent pas par Checkout : la feuille du
+   système s'ouvre au doigt et confirme directement une intention. Le
+   montant est calculé ici, comme partout ailleurs, jamais repris du
+   navigateur. */
+export async function creerIntention(opts: {
+  reference: string;
+  montant: number;
+  email: string;
+  quantite: number;
+}) {
+  return stripe().paymentIntents.create({
+    amount: centimes(opts.montant),
+    currency: 'eur',
+    // Restreint aux moyens qui savent s'ouvrir en une feuille système.
+    automatic_payment_methods: { enabled: true },
+    receipt_email: opts.email || undefined,
+    description: `Traduction assermentée — ${opts.quantite} document${opts.quantite > 1 ? 's' : ''} — ${opts.reference}`,
+    metadata: { reference: opts.reference },
+  });
+}
+
 export async function creerSession(opts: {
   reference: string;
   quantite: number;
