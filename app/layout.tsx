@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'protranslayte — traduction assermentée de bulletins de notes',
+  // Le mot-clé porteur est placé en tête : personne ne cherche la marque, et
+  // les 60 premiers caractères sont les seuls réellement lus dans Google.
+  title: 'Traduction assermentée de bulletins et diplômes — 25 € sous 48 h',
   description:
-    'Traduction assermentée de bulletins de notes — 25 € le document, livraison sous 24 à 48 h.',
+    'Traduction assermentée et certifiée de bulletins de notes, relevés et diplômes par un traducteur agréé près une cour d’appel. Prix fixe de 25 € par document, livrée en 24 à 48 h, sans devis à attendre.',
   // Le site reste hors index tant qu'il n'est pas commercialement prêt.
   robots: { index: false, follow: false },
 };

@@ -50,7 +50,7 @@ export default function CarteCommande() {
   const peutPayer = fichiers.length > 0 && contactComplet && adresseComplete && !envoi;
 
   const etape = contactComplet && fichiers.length > 0 ? 3 : fichiers.length > 0 ? 2 : 1;
-  const libelleEtape = ['Déposez vos bulletins', 'Vos coordonnées', 'Prêt à payer'][etape - 1];
+  const libelleEtape = ['Déposez vos documents', 'Vos coordonnées', 'Prêt à payer'][etape - 1];
 
   // Barre collante : visible dès que la carte sort de l'écran.
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function CarteCommande() {
 
   async function commander(moyen: 'carte' | 'applepay') {
     if (fichiers.length === 0) {
-      setMessage('Déposez d’abord votre bulletin.');
+      setMessage('Déposez d’abord vos documents.');
       return;
     }
     setEnvoi(true);
@@ -209,7 +209,10 @@ export default function CarteCommande() {
         </div>
 
         <div className="doctype-lock">
-          <span className="name">Bulletins de notes</span>
+          {/* C'est ici que le visiteur vérifie s'il a le droit d'envoyer son
+              diplôme. Tant que cette ligne ne le nomme pas, il ne l'envoie pas,
+              quelle que soit la page d'accueil. */}
+          <span className="name">Bulletins et diplômes</span>
           <span className="qty">
             <button
               type="button"
@@ -266,8 +269,8 @@ export default function CarteCommande() {
               strokeLinejoin="round"
             />
           </svg>
-          <span className="u-title">Déposez votre bulletin ici</span>
-          <span className="u-sub">PDF ou photo · plusieurs fichiers possibles</span>
+          <span className="u-title">Déposez vos documents ici</span>
+          <span className="u-sub">Bulletins, relevés, diplômes · plusieurs fichiers à la fois</span>
           {fichiers.length > 0 && (
             <span className="fichiers" style={{ display: 'flex' }}>
               {fichiers.map((f) => (
@@ -391,7 +394,7 @@ export default function CarteCommande() {
           disabled={!peutPayer}
           onClick={() => commander('carte')}
         >
-          {envoi ? 'Envoi en cours…' : `Payer ${eur(total)} et faire traduire ${qte > 1 ? 'mes bulletins' : 'mon bulletin'}`}
+          {envoi ? 'Envoi en cours…' : `Payer ${eur(total)} et faire traduire ${qte > 1 ? 'mes documents' : 'mon document'}`}
         </button>
 
         <div className="pay-divider">ou</div>
@@ -458,7 +461,7 @@ export default function CarteCommande() {
             }, 500);
           }}
         >
-          Traduire mon bulletin
+          Traduire mes documents
         </button>
       </div>
     </>

@@ -70,13 +70,13 @@ export default function Page() {
           <Logo />
           <nav className="navlinks">
             <a href="#process">Comment ça marche</a>
-            <a href="#documents">Bulletins acceptés</a>
+            <a href="#documents">Documents acceptés</a>
             <a href="#assermentation">Certification</a>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="navcta">
             <a className="btn btn-primary" href="#dossier">
-              Traduire mon bulletin
+              Traduire mes documents
             </a>
           </div>
         </div>
@@ -85,13 +85,15 @@ export default function Page() {
       <section className="hero">
         <div className="wrap">
           <div className="hero-intro">
-            <span className="eyebrow">Traduction certifiée de bulletins scolaires</span>
-            <h1>Votre bulletin de notes, traduit et certifié, sans devis à attendre.</h1>
+            {/* « assermentée » plutôt que « certifiée » : 1K–10K recherches
+                mensuelles contre 100–1K, mesuré dans l'outil Google le 13 août. */}
+            <span className="eyebrow">Traduction assermentée de bulletins et diplômes</span>
+            <h1>Vos bulletins et diplômes, traduits et certifiés, sans devis à attendre.</h1>
             <p className="lead">
               <span className="lead-long">
-                Déposez votre bulletin, choisissez la langue d&apos;arrivée, payez 25&nbsp;€ au lieu
-                de 35&nbsp;€. Un traducteur assermenté prend le relais — livraison sous 24 à
-                48&nbsp;h, reconnue par les universités et administrations.
+                Déposez vos documents, choisissez la langue d&apos;arrivée, payez 25&nbsp;€ par
+                document au lieu de 35&nbsp;€. Un traducteur assermenté prend le relais — livraison
+                sous 24 à 48&nbsp;h, reconnue par les universités et administrations.
               </span>
               <span className="lead-short">
                 Traduction assermentée en 24 à 48&nbsp;h, reconnue par les universités et
@@ -182,8 +184,8 @@ export default function Page() {
                   <path d="M12 4v11m0-11 4 4m-4-4-4 4M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h3>Dépôt du bulletin</h3>
-              <p>Vous téléversez une photo ou un scan de votre bulletin et réglez 25&nbsp;€ par carte, en une fois.</p>
+              <h3>Dépôt des documents</h3>
+              <p>Vous téléversez une photo ou un scan de chaque document et réglez 25&nbsp;€ par document, en une fois.</p>
             </div>
             <div className="step">
               <div className="stamp">
@@ -211,16 +213,20 @@ export default function Page() {
         <div className="wrap">
           <div className="doc-focus">
             <div>
-              <span className="eyebrow">Notre spécialité</span>
-              <h2 style={{ marginTop: 10 }}>Un seul document, fait pour être fait bien</h2>
+              {/* Formulé comme une expertise, pas comme une limite : chaque
+                  futur service aura son propre site, et cette section ne doit
+                  pas laisser entendre que l'entreprise ne fait que ça. */}
+              <span className="eyebrow">Notre expertise</span>
+              <h2 style={{ marginTop: 10 }}>Le vocabulaire scolaire ne s&apos;improvise pas</h2>
               <p style={{ color: 'var(--ink-soft)', marginTop: 12 }}>
-                Contrairement aux agences généralistes, protranslayte se concentre sur un seul type
-                de document : le bulletin de notes. Cette spécialisation garantit une mise en page
-                fidèle et un vocabulaire scolaire précis, quelle que soit la langue.
+                Coefficients, appréciations, mentions, livrets de compétences, moyennes sur 20 :
+                autant de notions qui n&apos;ont pas d&apos;équivalent direct d&apos;un pays à
+                l&apos;autre. Ce site est entièrement consacré aux documents scolaires, et nos
+                traducteurs assermentés en traitent tous les jours.
               </p>
               <ul>
                 <li><Coche />Bulletins trimestriels et semestriels</li>
-                <li><Coche />Collège, lycée général, technologique et professionnel</li>
+                <li><Coche />Relevés de notes, livrets scolaires et diplômes</li>
                 <li><Coche />Systèmes de notation français conservés et expliqués</li>
               </ul>
             </div>
@@ -228,7 +234,7 @@ export default function Page() {
               <div className="variant"><b>Bulletin collège</b><span>4e, 3e — bilan trimestriel</span></div>
               <div className="variant"><b>Bulletin lycée</b><span>Seconde à Terminale</span></div>
               <div className="variant"><b>Livret scolaire</b><span>Suivi annuel des acquis</span></div>
-              <div className="variant"><b>Relevé de moyennes</b><span>Extrait synthétique</span></div>
+              <div className="variant"><b>Diplôme &amp; relevé</b><span>Baccalauréat, licence, master</span></div>
             </div>
           </div>
         </div>
@@ -261,12 +267,12 @@ export default function Page() {
         <div className="wrap">
           <div className="section-head">
             <span className="eyebrow">Questions fréquentes</span>
-            <h2>Tout ce qu&apos;il faut savoir avant de déposer votre bulletin</h2>
+            <h2>Tout ce qu&apos;il faut savoir avant de déposer vos documents</h2>
           </div>
           <div className="faq-list">
             <details open>
               <summary>Le prix de 25&nbsp;€ inclut-il vraiment tout ?</summary>
-              <p>Oui. 25&nbsp;€ couvre la traduction assermentée d&apos;un bulletin, quelle que soit la paire de langues, la certification par un traducteur assermenté et la livraison du PDF signé par email.</p>
+              <p>Oui. 25&nbsp;€ couvre la traduction assermentée d&apos;un document — bulletin, relevé de notes, livret ou diplôme — quelle que soit la paire de langues, la certification par un traducteur assermenté et la livraison du PDF signé par email.</p>
             </details>
             <details>
               <summary>Combien de temps pour recevoir ma traduction ?</summary>
@@ -274,7 +280,7 @@ export default function Page() {
             </details>
             <details>
               <summary>Quels formats de fichiers sont acceptés ?</summary>
-              <p>PDF et photos jusqu&apos;à 10 Mo par fichier. Une photo nette et bien cadrée du bulletin suffit — pas besoin de scanner professionnel.</p>
+              <p>PDF et photos jusqu&apos;à 10 Mo par fichier. Une photo nette et bien cadrée du document suffit — pas besoin de scanner professionnel.</p>
             </details>
             <details>
               <summary>La traduction est-elle acceptée par les administrations et universités ?</summary>
@@ -301,14 +307,15 @@ export default function Page() {
                 <Logo />
               </div>
               <p style={{ color: 'var(--ink-soft)', fontSize: '0.88rem', maxWidth: 280 }}>
-                Traduction assermentée de bulletins de notes, prix fixe, sans devis à attendre.
+                Traduction assermentée de bulletins, relevés et diplômes. Prix fixe, sans devis à
+                attendre.
               </p>
             </div>
             <div>
               <h4>Service</h4>
               <ul>
                 <li><a href="#process">Comment ça marche</a></li>
-                <li><a href="#documents">Bulletins acceptés</a></li>
+                <li><a href="#documents">Documents acceptés</a></li>
                 <li><a href="#assermentation">Certification</a></li>
               </ul>
             </div>
