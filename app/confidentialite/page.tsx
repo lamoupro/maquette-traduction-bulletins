@@ -163,12 +163,50 @@ export default function Confidentialite() {
         l&apos;adhésion du prestataire au cadre de protection des données UE — États-Unis.
       </p>
 
-      <h2>Cookies</h2>
+      <h2>Cookies et stockage local</h2>
       <p>
         Le site ne dépose aucun cookie publicitaire ni aucun traceur de mesure d&apos;audience.
-        Seul un cookie strictement nécessaire est utilisé, pour maintenir la session de
-        l&apos;interface d&apos;administration réservée à l&apos;éditeur. Aucun consentement
-        n&apos;est donc requis, et aucune bannière ne vous est imposée.
+        Aucun consentement n&apos;est donc requis, et aucune bannière ne vous est imposée.
+      </p>
+      <p>
+        Deux mécanismes strictement nécessaires sont utilisés, tous deux limités à votre appareil :
+      </p>
+      <table className="legal-table">
+        <thead>
+          <tr>
+            <th>Ce qui est conservé</th>
+            <th>Pourquoi</th>
+            <th>Durée</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Un cookie de session d&apos;administration</td>
+            <td>Réservé à l&apos;éditeur du site, jamais déposé chez un client</td>
+            <td>12 heures</td>
+          </tr>
+          <tr>
+            <td>
+              Votre saisie en cours : langues, nombre de documents, adresse électronique, nom,
+              adresse postale
+            </td>
+            <td>
+              Vous éviter de tout ressaisir si vous quittez la page — pour consulter votre
+              application bancaire, par exemple
+            </td>
+            <td>7 jours</td>
+          </tr>
+          <tr>
+            <td>La référence de la commande en attente de paiement</td>
+            <td>Vous permettre de reprendre un paiement interrompu sans redéposer vos documents</td>
+            <td>12 heures</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Ces informations restent <strong>sur votre appareil</strong> : elles ne sont transmises à
+        aucun serveur et à aucun tiers. Vider les données de site de votre navigateur les supprime
+        immédiatement.
       </p>
 
       <h2>Vos droits</h2>

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { stripe, stripeConfigure } from '@/lib/stripe';
 import Logo from '@/components/Logo';
+import NettoyerCommande from '@/components/NettoyerCommande';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -55,6 +56,7 @@ export default async function Retour({
         <div className="wrap" style={{ maxWidth: 560 }}>
           {etat === 'paye' ? (
             <>
+              <NettoyerCommande />
               <h1>Merci, votre commande est confirmée</h1>
               <p className="legal-intro">
                 Votre paiement de{' '}

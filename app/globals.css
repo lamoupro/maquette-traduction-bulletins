@@ -473,3 +473,38 @@
      tableau de bord Stripe. */
   .stripe-checkout{margin:2px 0;min-height:340px;}
   .stripe-checkout iframe{width:100% !important;}
+
+  /* ---------- PAGE DE PAIEMENT ISOLÉE ----------
+     Ni menu, ni sections, ni pied de page : au moment de payer, rien ne doit
+     détourner l'attention du montant. */
+  .paiement-entete{border-bottom:1px solid var(--rule);background:var(--paper-raised);
+    padding:16px 20px;display:flex;justify-content:center;}
+  .paiement-entete a{text-decoration:none;}
+  .paiement-page{min-height:70vh;display:flex;justify-content:center;padding:28px 16px 60px;}
+  .paiement-attente{color:var(--ink-soft);font-size:0.9rem;align-self:center;}
+  .paiement-carte{width:100%;max-width:520px;background:var(--paper-raised);
+    border:1px solid var(--rule);border-radius:12px;padding:22px;
+    display:flex;flex-direction:column;gap:16px;}
+  .paiement-carte h1{font-size:1.2rem;}
+  .paiement-carte p{font-size:0.94rem;color:var(--ink-soft);margin:0;}
+  .paiement-carte a{color:var(--brass-deep);}
+  .paiement-tete{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .paiement-tete .ref{font-family:var(--font-mono);font-size:0.72rem;color:var(--ink-soft);}
+
+  .paiement-recap{border-top:1px dashed var(--rule);border-bottom:1px dashed var(--rule);
+    padding:12px 0;display:flex;flex-direction:column;gap:8px;font-size:0.9rem;}
+  .paiement-recap > div{display:flex;justify-content:space-between;gap:14px;color:var(--ink-soft);}
+  .paiement-recap .paiement-total{padding-top:8px;border-top:1px solid var(--rule);
+    color:var(--ink);font-weight:700;font-size:1.02rem;}
+
+  .paiement-rassure{display:flex;flex-direction:column;gap:5px;font-size:0.78rem;color:var(--ink-soft);}
+  .paiement-rassure span::before{content:"✓";color:var(--verified);font-weight:700;margin-right:7px;}
+
+  .lien-discret{background:none;border:none;padding:4px;cursor:pointer;
+    font-family:var(--font-body);font-size:0.82rem;color:var(--ink-soft);
+    text-decoration:underline;text-underline-offset:2px;align-self:center;}
+  .lien-discret:hover{color:var(--brass-deep);}
+
+  /* Apparition des champs révélés en cascade. */
+  .revele{animation:contact-in .28s cubic-bezier(.22,.9,.3,1);}
+  @media (prefers-reduced-motion: reduce){ .revele{animation:none;} }

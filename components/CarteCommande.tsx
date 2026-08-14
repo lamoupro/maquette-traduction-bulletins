@@ -1,8 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { MAX_DOCS, PRIX_ENVOI, PRIX_NORMAL, PRIX_OFFRE } from '@/lib/data';
-import PaiementStripe from './PaiementStripe';
+import {
+  ecrireBrouillon,
+  ecrireEnAttente,
+  effacerEnAttente,
+  lireBrouillon,
+  lireEnAttente,
+  type EnAttente,
+} from '@/lib/memoire';
 
 const LANGUES = ['Français', 'Anglais', 'Espagnol', 'Arabe', 'Portugais', 'Italien', 'Allemand'];
 
@@ -27,10 +35,10 @@ export default function CarteCommande() {
   const [ville, setVille] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState('');
-  const [reference, setReference] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [dossier, setDossier] = useState('—');
+  const [enAttente, setEnAttente] = useState<EnAttente | null>(null);
 
+  const router = useRouter();
   const refFichier = useRef<HTMLInputElement>(null);
   const refCarte = useRef<HTMLDivElement>(null);
   const [cachetVisible, setCachetVisible] = useState(false);
@@ -39,6 +47,25 @@ export default function CarteCommande() {
   // rendu serveur et le rendu navigateur.
   useEffect(() => {
     setDossier(String(Math.floor(100000 + Math.random() * 899999)));
+
+    // Restitution du brouillon. Les fichiers ne peuvent pas être conservés
+    // — le navigateur l'interdit — mais tout le reste revient.
+    const b = lireBrouillon();
+    if (b) {
+      if (b.source) setSource(b.source);
+      if (b.cible) setCible(b.cible);
+      if (b.qte) setQte(b.qte);
+      if (b.email) setEmail(b.email);
+      if (b.prenom) setPrenom(b.prenom);
+      if (b.nom) setNom(b.nom);
+      if (b.remarque) setRemarque(b.remarque);
+      if (b.postal) setPostal(true);
+      if (b.adresse) setAdresse(b.adresse);
+      if (b.codePostal) setCodePostal(b.codePostal);
+      if (b.ville) setVille(b.ville);
+    }
+
+    setEnAttente(lireEnAttente());
   }, []);
 
   const avant = qte * PRIX_NORMAL;
@@ -53,6 +80,29 @@ export default function CarteCommande() {
 
   const etape = contactComplet && fichiers.length > 0 ? 3 : fichiers.length > 0 ? 2 : 1;
   const libelleEtape = ['Déposez vos documents', 'Vos coordonnées', 'Prêt à payer'][etape - 1];
+
+  /* Révélation en cascade : un champ rempli en découvre un nouveau. Tout
+     afficher d'un coup après le dépôt donnait un mur de formulaire, et
+     c'est là que les gens renoncent. */
+  const emailPret = emailValide(email);
+  const identitePrete = prenom.trim() !== '' && nom.trim() !== '';
+
+  // Le brouillon suit chaque frappe : le visiteur peut quitter à tout moment.
+  useEffect(() => {
+    ecrireBrouillon({
+      source,
+      cible,
+      qte,
+      email,
+      prenom,
+      nom,
+      remarque,
+      postal,
+      adresse,
+      codePostal,
+      ville,
+    });
+  }, [source, cible, qte, email, prenom, nom, remarque, postal, adresse, codePostal, ville]);
 
   // Barre collante : visible dès que la carte sort de l'écran.
   useEffect(() => {
@@ -103,10 +153,22 @@ export default function CarteCommande() {
       const json = await r.json();
       if (!r.ok) throw new Error(json.erreur || 'Envoi impossible');
       if (!json.clientSecret) throw new Error("Le paiement n'a pas pu être initialisé.");
-      // Les documents sont déposés, le paiement peut commencer : on remplace
-      // le formulaire par Checkout, dans la même carte.
-      setReference(json.reference);
-      setClientSecret(json.clientSecret);
+
+      /* Les documents sont chez nous : on mémorise de quoi reprendre le
+         paiement, puis on quitte la page d'accueil pour une page dédiée.
+
+         C'est cette navigation qui répare le bouton « retour » du
+         navigateur : sans elle, revenir en arrière faisait sortir du site. */
+      ecrireEnAttente({
+        reference: json.reference,
+        clientSecret: json.clientSecret,
+        montant: json.montant,
+        quantite: qte,
+        source,
+        cible,
+        postal,
+      });
+      router.push(`/commande/paiement?ref=${encodeURIComponent(json.reference)}`);
     } catch (e) {
       setMessage(
         e instanceof Error ? e.message : 'Une erreur est survenue. Réessayez dans un instant.',
@@ -116,75 +178,47 @@ export default function CarteCommande() {
     }
   }
 
-  // Paiement en cours : Checkout prend toute la carte. Le visiteur reste sur
-  // protranslayte.com, seul le formulaire vient de Stripe.
-  if (reference && clientSecret) {
+  /* Le paiement vit désormais sur sa propre page, /commande/paiement.
+     La carte n'affiche donc plus jamais Checkout : elle propose seulement
+     de reprendre une commande laissée en plan. */
+  if (enAttente) {
     return (
       <div className="dossier" id="dossier" ref={refCarte}>
         <div className="dossier-top">
-          <span className="eyebrow">Paiement sécurisé</span>
-          <span className="ref tabular">DOSSIER N° {reference}</span>
-        </div>
-        <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--ink-soft)' }}>
-          Vos {fichiers.length > 1 ? 'documents sont déposés' : 'document est déposé'}. Il ne reste
-          qu’à régler {eur(total)}.
-        </p>
-        <PaiementStripe clientSecret={clientSecret} />
-        <div className="microtrust">
-          <div>
-            <svg viewBox="0 0 20 20" fill="currentColor">
-              <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
-            </svg>
-            Paiement chiffré, traité par Stripe
-          </div>
-          <div>
-            <svg viewBox="0 0 20 20" fill="currentColor">
-              <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
-            </svg>
-            Satisfait ou remboursé 30 jours
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (reference) {
-    return (
-      <div className="dossier" id="dossier" ref={refCarte}>
-        <div className="dossier-top">
-          <span className="eyebrow">Dossier enregistré</span>
-          <span className="ref tabular">DOSSIER N° {reference}</span>
+          <span className="eyebrow">Commande en attente</span>
+          <span className="ref tabular">DOSSIER N° {enAttente.reference}</span>
         </div>
         <p style={{ margin: 0, fontSize: '0.95rem' }}>
-          Merci {prenom}. Nous avons bien reçu {fichiers.length}{' '}
-          {fichiers.length > 1 ? 'documents' : 'document'}.
+          Vos {enAttente.quantite > 1 ? 'documents sont déposés' : 'document est déposé'} et vous
+          attendent. Il ne reste qu’à régler <strong>{eur(enAttente.montant)}</strong>.
         </p>
+        <button
+          className="btn btn-primary btn-block"
+          type="button"
+          onClick={() =>
+            router.push(`/commande/paiement?ref=${encodeURIComponent(enAttente.reference)}`)
+          }
+        >
+          Reprendre et payer {eur(enAttente.montant)}
+        </button>
+        <button
+          type="button"
+          className="lien-discret"
+          onClick={() => {
+            effacerEnAttente();
+            setEnAttente(null);
+          }}
+        >
+          Recommencer une nouvelle commande
+        </button>
         <div className="microtrust">
           <div>
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
             </svg>
-            Un récapitulatif part à l’adresse {email}
+            {enAttente.source} → {enAttente.cible} · rien n’a été débité
           </div>
-          <div>
-            <svg viewBox="0 0 20 20" fill="currentColor">
-              <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
-            </svg>
-            Traduction livrée sous 24 à 48 h
-          </div>
-          {postal && (
-            <div>
-              <svg viewBox="0 0 20 20" fill="currentColor">
-                <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
-              </svg>
-              Original papier envoyé à {ville || 'votre adresse'}
-            </div>
-          )}
         </div>
-        <p className="toast">
-          Le paiement sera branché à l’étape suivante : votre dossier est enregistré, rien n’a été
-          débité.
-        </p>
       </div>
     );
   }
@@ -343,48 +377,59 @@ export default function CarteCommande() {
                 required
               />
             </div>
-            <div className="duo">
-              <input
-                type="text"
-                autoComplete="given-name"
-                placeholder="Prénom"
-                value={prenom}
-                onChange={(e) => setPrenom(e.target.value)}
-                required
-              />
-              <input
-                type="text"
-                autoComplete="family-name"
-                placeholder="Nom"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                required
-              />
-            </div>
-            <textarea
-              rows={2}
-              placeholder="Une précision sur votre dossier ? (facultatif)"
-              value={remarque}
-              onChange={(e) => setRemarque(e.target.value)}
-            />
+            {/* Le nom n'apparaît qu'une fois l'e-mail valide, la remarque et
+                l'option postale qu'une fois le nom donné. Un champ à la fois
+                se remplit ; cinq champs d'un coup se referment. */}
+            {emailPret && (
+              <div className="duo revele">
+                <input
+                  type="text"
+                  autoComplete="given-name"
+                  placeholder="Prénom"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  required
+                />
+                <input
+                  type="text"
+                  autoComplete="family-name"
+                  placeholder="Nom"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
-            {/* Proposé seulement ici, une fois le bulletin déposé : présenté
-                d'emblée, un supplément payant ferait hésiter avant même que
-                le visiteur ait commencé. */}
-            <label className="option-postal">
-              <input
-                type="checkbox"
-                checked={postal}
-                onChange={(e) => setPostal(e.target.checked)}
+            {emailPret && identitePrete && (
+              <textarea
+                className="revele"
+                rows={2}
+                placeholder="Une précision sur votre dossier ? (facultatif)"
+                value={remarque}
+                onChange={(e) => setRemarque(e.target.value)}
               />
-              <span className="op-txt">
-                <span className="op-titre">Recevoir aussi l&apos;original par courrier</span>
-                <span className="op-sub">
-                  Exemplaire papier tamponné et signé, envoi suivi en France
+            )}
+
+            {/* Proposé en dernier, une fois les coordonnées données : un
+                supplément payant présenté trop tôt fait hésiter avant même
+                que le visiteur ait commencé. */}
+            {emailPret && identitePrete && (
+              <label className="option-postal revele">
+                <input
+                  type="checkbox"
+                  checked={postal}
+                  onChange={(e) => setPostal(e.target.checked)}
+                />
+                <span className="op-txt">
+                  <span className="op-titre">Recevoir aussi l&apos;original par courrier</span>
+                  <span className="op-sub">
+                    Exemplaire papier tamponné et signé, envoi suivi en France
+                  </span>
                 </span>
-              </span>
-              <span className="op-prix tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
-            </label>
+                <span className="op-prix tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
+              </label>
+            )}
 
             {postal && (
               <div className="adresse-bloc">
