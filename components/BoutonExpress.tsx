@@ -40,18 +40,29 @@ export type DonneesExpress = {
 function Bouton({
   donnees,
   montant,
+  actif,
   surErreur,
 }: {
   donnees: DonneesExpress;
   montant: number;
+  actif: boolean;
   surErreur: (m: string) => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [visible, setVisible] = useState(false);
 
+  /* Tant que l'adresse électronique manque, le bouton d'Apple est affiché
+     mais désaturé et inerte. Le visiteur voit ce qui l'attend, comprend
+     qu'il lui manque une information, et le bouton reprend ses couleurs
+     dès qu'elle est saisie. Le griser plutôt que le cacher évite qu'il
+     surgisse de nulle part au dernier moment. */
+  const classes = ['express-zone', visible ? '' : 'est-vide', actif ? '' : 'est-inactif']
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={visible ? 'express-zone' : 'express-zone est-vide'}>
+    <div className={classes} aria-disabled={!actif}>
       <ExpressCheckoutElement
         options={{
           buttonType: { applePay: 'buy', googlePay: 'buy' },
@@ -96,6 +107,9 @@ function Bouton({
           }
         }}
       />
+      {visible && !actif ? (
+        <p className="express-aide">Renseignez votre e-mail pour payer en un geste</p>
+      ) : null}
     </div>
   );
 }
@@ -103,17 +117,23 @@ function Bouton({
 export default function BoutonExpress(props: {
   donnees: DonneesExpress;
   montant: number;
+  actif: boolean;
   surErreur: (m: string) => void;
 }) {
   // Sans clé publique, ou sans dossier déposé, il n'y a rien à monter.
   if (!stripePromise || !props.donnees.reference || props.montant <= 0) return null;
 
+  const centimes = Math.round(props.montant * 100);
+
   return (
+    /* La clé force le remontage quand le montant change : Stripe ne relit
+       pas `amount` après coup, et la feuille afficherait l'ancien prix. */
     <Elements
+      key={centimes}
       stripe={stripePromise}
       options={{
         mode: 'payment',
-        amount: Math.round(props.montant * 100),
+        amount: centimes,
         currency: 'eur',
         locale: 'fr',
         appearance: { variables: { borderRadius: '6px' } },

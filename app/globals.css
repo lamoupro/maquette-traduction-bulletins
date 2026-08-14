@@ -513,5 +513,10 @@
      Apple Pay / Google Pay natifs. La zone disparaît complètement quand
      l'appareil ne les propose pas : un espace vide sous le bouton principal
      ferait croire à un défaut d'affichage. */
-  .express-zone{margin-top:2px;}
+  .express-zone{margin-top:2px;transition:filter .35s ease, opacity .35s ease;}
   .express-zone.est-vide{display:none;}
+  /* Grisé et inerte tant que l'adresse électronique manque : le visiteur
+     voit ce qui l'attend au lieu de le découvrir surgir au dernier moment. */
+  .express-zone.est-inactif{filter:grayscale(1);opacity:0.4;pointer-events:none;}
+  .express-aide{margin:7px 0 0;font-size:0.76rem;color:var(--ink-soft);text-align:center;}
+  @media (prefers-reduced-motion: reduce){ .express-zone{transition:none;} }

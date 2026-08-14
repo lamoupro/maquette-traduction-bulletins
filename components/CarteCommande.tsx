@@ -509,14 +509,15 @@ export default function CarteCommande() {
         </button>
 
         {/* Le vrai bouton Apple Pay : il ouvre la feuille du système au doigt,
-            sans page intermédiaire. Il n'apparaît que si l'appareil le
-            supporte, et dès que l'adresse électronique est valide — le nom
-            vient de la feuille, et figure de toute façon sur les bulletins. */}
-        {refDepot && emailPret && adresseComplete && (
+            sans page intermédiaire. Il apparaît dès le dépôt — grisé tant que
+            l'adresse électronique manque, puis actif. Le nom vient de la
+            feuille, et figure de toute façon sur les bulletins. */}
+        {refDepot && (
           <>
             <div className="pay-divider">ou</div>
             <BoutonExpress
               montant={total}
+              actif={emailPret && adresseComplete}
               surErreur={setMessage}
               donnees={{
                 reference: refDepot,
