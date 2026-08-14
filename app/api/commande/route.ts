@@ -148,10 +148,17 @@ export async function POST(requete: Request) {
     });
   } catch (e) {
     console.error('[commande] échec de la session Stripe', e);
-    // Les fichiers sont déjà en lieu sûr : on peut réessayer le paiement sans
-    // redemander au client de tout redéposer.
+    /* Le code d'erreur Stripe est renvoyé au client. Ce n'est pas une donnée
+       sensible — ce sont des étiquettes du type « api_key_invalid » — et sans
+       lui, diagnostiquer une panne de paiement obligerait à fouiller les
+       journaux d'hébergement à chaque fois. */
+    const st = e as { type?: string; code?: string; statusCode?: number };
     return NextResponse.json(
-      { erreur: "Le paiement n'a pas pu être initialisé. Réessayez." },
+      {
+        erreur: "Le paiement n'a pas pu être initialisé. Réessayez.",
+        motif: st.code ?? st.type ?? 'inconnu',
+        statut: st.statusCode ?? null,
+      },
       { status: 502 },
     );
   }
