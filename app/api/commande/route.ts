@@ -152,12 +152,13 @@ export async function POST(requete: Request) {
        sensible — ce sont des étiquettes du type « api_key_invalid » — et sans
        lui, diagnostiquer une panne de paiement obligerait à fouiller les
        journaux d'hébergement à chaque fois. */
-    const st = e as { type?: string; code?: string; statusCode?: number };
+    const st = e as { type?: string; code?: string; statusCode?: number; message?: string };
     return NextResponse.json(
       {
         erreur: "Le paiement n'a pas pu être initialisé. Réessayez.",
         motif: st.code ?? st.type ?? 'inconnu',
         statut: st.statusCode ?? null,
+        detail: st.message ?? null,
       },
       { status: 502 },
     );
