@@ -88,3 +88,27 @@ export type EnAttente = {
 export const lireEnAttente = () => lire<EnAttente>('paiement');
 export const ecrireEnAttente = (p: EnAttente) => ecrire('paiement', p, 12);
 export const effacerEnAttente = () => effacer('paiement');
+
+/* ---------- Identifiant de clic publicitaire ----------
+
+   Quand un visiteur arrive depuis une annonce, Google ajoute un `gclid` à
+   l'adresse. On le garde sur l'appareil, sans cookie ni traceur, le temps
+   qu'il commande — et on l'attache à la commande au moment du dépôt.
+
+   C'est ce qui permet de renvoyer la conversion à Google depuis le serveur,
+   une fois le paiement confirmé. Aucune bannière de consentement n'est
+   nécessaire : rien n'est transmis à un tiers pendant la visite, et la
+   donnée sert uniquement à l'exécution de la commande.
+
+   Quatre-vingt-dix jours, la fenêtre d'attribution de Google. */
+
+export const lireClic = () => lire<string>('clic');
+
+/** À appeler au chargement : mémorise l'identifiant s'il est dans l'adresse. */
+export function capterClic() {
+  if (typeof window === 'undefined') return;
+  const p = new URLSearchParams(window.location.search);
+  // gclid pour le Search, wbraid et gbraid pour les campagnes iOS.
+  const id = p.get('gclid') ?? p.get('wbraid') ?? p.get('gbraid');
+  if (id) ecrire('clic', id, 24 * 90);
+}

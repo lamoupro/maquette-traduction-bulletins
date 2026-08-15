@@ -103,10 +103,16 @@ export async function POST(requete: Request) {
       cles.push(cle);
     }
 
+    /* Identifiant de clic publicitaire, s'il y en a un. Conservé avec la
+       commande pour renvoyer la conversion à Google une fois le paiement
+       confirmé — sans cookie déposé chez le visiteur. */
+    const clic = String(donnees.get('clic') ?? '').trim().slice(0, 200) || null;
+
     await ecrireFiche(ref, {
       reference: ref,
       recuLe: new Date().toISOString(),
       statut: 'depose',
+      clic,
       pages: total,
       fichiers: contenus.map((c) => ({
         nom: c.fichier.name,

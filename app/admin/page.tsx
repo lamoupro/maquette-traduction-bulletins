@@ -18,6 +18,7 @@ type Fiche = {
   client: { email: string; prenom: string; nom: string };
   langues: { source: string; cible: string };
   pages?: number;
+  clic?: string | null;
   fichiers?: { nom: string; pages?: number }[];
   montant: number;
   statut?: 'en_attente_paiement' | 'payee';
@@ -144,6 +145,20 @@ export default async function Admin({
         {fiches.length} commande{fiches.length > 1 ? 's' : ''} · documents conservés{' '}
         {CONSERVATION_JOURS} jours
       </p>
+
+      {/* Export des ventes venues d'une annonce, à déposer dans Google Ads.
+          C'est ce qui remplace la balise de suivi : aucun cookie chez le
+          visiteur, donc aucune bannière de consentement à afficher. */}
+      {fiches.some((f) => f.statut === 'payee' && f.clic) && (
+        <p style={{ marginTop: 4 }}>
+          <a
+            href="/admin/conversions"
+            style={{ fontSize: '0.85rem', color: 'var(--brass)', fontWeight: 600 }}
+          >
+            ↓ Exporter les conversions pour Google Ads
+          </a>
+        </p>
+      )}
 
       {fiches.length === 0 && (
         <p style={{ color: 'var(--ink-soft)' }}>Aucune commande pour l’instant.</p>

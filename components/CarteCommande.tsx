@@ -8,7 +8,9 @@ import {
   ecrireBrouillon,
   ecrireEnAttente,
   effacerEnAttente,
+  capterClic,
   lireBrouillon,
+  lireClic,
   lireEnAttente,
   type EnAttente,
 } from '@/lib/memoire';
@@ -54,6 +56,9 @@ export default function CarteCommande() {
   // rendu serveur et le rendu navigateur.
   useEffect(() => {
     setDossier(String(Math.floor(100000 + Math.random() * 899999)));
+
+    // Mémorise l'identifiant de clic si le visiteur arrive d'une annonce.
+    capterClic();
 
     // Restitution du brouillon. Les fichiers ne peuvent pas être conservés
     // — le navigateur l'interdit — mais tout le reste revient.
@@ -176,6 +181,8 @@ export default function CarteCommande() {
       const d = new FormData();
       liste.forEach((f) => d.append('fichiers', f));
       if (refDepot) d.append('reference', refDepot);
+      const clic = lireClic();
+      if (clic) d.append('clic', clic);
       const r = await fetch('/api/depot', { method: 'POST', body: d });
       const json = await r.json();
       // Un dépôt plus récent a déjà répondu : on ignore celui-ci.
