@@ -14,7 +14,6 @@ export type Coordonnees = {
   source: string;
   cible: string;
   remarque: string;
-  quantite: number;
   envoiPostal: boolean;
   adresse: string;
   codePostal: string;
@@ -50,16 +49,17 @@ export async function preparer(c: Coordonnees) {
     return { refus: { erreur: 'Cette commande est déjà réglée.', statut: 409 } as Refus };
   }
 
-  // La quantité ne peut pas dépasser ce qui a réellement été déposé.
-  const deposes = depot.fichiers?.length ?? 1;
-  const { quantite, montant } = montantDe(Math.max(c.quantite, deposes), c.envoiPostal);
+  /* Le nombre de pages vient du dépôt, jamais de la requête : c'est le
+     serveur qui les a comptées dans les fichiers, le navigateur n'a pas
+     voix au chapitre sur le prix. */
+  const { pages, montant } = montantDe(depot.pages ?? depot.fichiers?.length ?? 1, c.envoiPostal);
 
   const commande = {
     ...depot,
     statut: 'en_attente_paiement' as const,
     client: { email: c.email, prenom: c.prenom, nom: c.nom },
     langues: { source: c.source, cible: c.cible },
-    quantite,
+    pages,
     montant,
     envoiPostal: c.envoiPostal,
     adressePostale: c.envoiPostal
@@ -69,5 +69,5 @@ export async function preparer(c: Coordonnees) {
   };
 
   await ecrireFiche(c.reference, commande);
-  return { commande, quantite, montant };
+  return { commande, pages, montant };
 }

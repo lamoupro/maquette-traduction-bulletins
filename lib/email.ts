@@ -27,7 +27,7 @@ export type Commande = {
   reference: string;
   client: { email: string; prenom: string; nom: string };
   langues: { source: string; cible: string };
-  quantite: number;
+  pages: number;
   montant: number;
   envoiPostal?: boolean;
   adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
@@ -81,8 +81,8 @@ function messageClient(c: Commande) {
     `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0;border-top:1px dashed #DDE4EE;border-bottom:1px dashed #DDE4EE;">
        <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">Référence</td>
            <td style="padding:12px 0;font-size:0.9rem;text-align:right;font-weight:700;">${echapper(c.reference)}</td></tr>
-       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Documents</td>
-           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.quantite} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
+       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">À traduire</td>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.pages} page${c.pages > 1 ? 's' : ''} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
        ${
          c.envoiPostal && c.adressePostale
            ? `<tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Envoi papier</td>
@@ -114,7 +114,7 @@ function messageClient(c: Commande) {
 function messageInterne(c: Commande, nbFichiers: number) {
   const corps =
     ligne(
-      `<strong>${c.quantite} document${c.quantite > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${montantLisible(c.montant)} €</strong>`,
+      `<strong>${c.pages} page${c.pages > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${montantLisible(c.montant)} €</strong>`,
     ) +
     ligne(
       `${echapper(c.client.prenom)} ${echapper(c.client.nom)} — <a href="mailto:${echapper(c.client.email)}" style="color:#1359B8;">${echapper(c.client.email)}</a>`,
@@ -138,7 +138,7 @@ function messageInterne(c: Commande, nbFichiers: number) {
      </p>`;
 
   return {
-    subject: `${c.envoiPostal ? '📮 ' : ''}Commande ${c.reference} — ${c.quantite} doc. — ${montantLisible(c.montant)} €`,
+    subject: `${c.envoiPostal ? '📮 ' : ''}Commande ${c.reference} — ${c.pages} page${c.pages > 1 ? 's' : ''} — ${montantLisible(c.montant)} €`,
     html: gabarit(`Nouvelle commande ${echapper(c.reference)}`, corps),
   };
 }

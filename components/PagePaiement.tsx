@@ -66,7 +66,7 @@ export default function PagePaiement() {
             <div>
               <span>Traduction assermentée</span>
               <span className="tabular">
-                {etat.quantite} × {etat.source} → {etat.cible}
+                {etat.pages} page{etat.pages > 1 ? 's' : ''} · {etat.source} → {etat.cible}
               </span>
             </div>
             {etat.postal ? (

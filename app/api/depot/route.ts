@@ -8,19 +8,22 @@ import {
   supprimer,
 } from '@/lib/stockage';
 import { reference, referenceValide, refusFichiers } from '@/lib/commande';
+import { compterPages } from '@/lib/pages';
+import { MAX_PAGES } from '@/lib/data';
 
 export const runtime = 'nodejs';
 
 /* Dépôt des documents, avant toute décision d'achat.
 
-   Motif : Apple Pay exige que sa feuille s'ouvre dans le geste même du
-   doigt. Impossible d'y glisser un téléversement d'une à deux secondes —
-   Safari refuserait. Les fichiers partent donc pendant que le visiteur
-   saisit son adresse, et le paiement n'a plus qu'à les référencer.
+   Deux raisons à ce découpage :
+
+   — Apple Pay exige que sa feuille s'ouvre dans le geste même du doigt.
+     Impossible d'y glisser un téléversement d'une à deux secondes.
+   — Le prix se compte en pages, et seul le serveur peut les compter. Le
+     dépôt est donc aussi le moment où le montant devient connu.
 
    Conséquence assumée : il existera des dossiers déposés jamais payés. Ils
-   portent le statut « depose », n'apparaissent jamais comme des commandes,
-   et la purge des trente jours les emporte comme les autres. */
+   portent le statut « depose » et la purge des trente jours les emporte. */
 
 export async function POST(requete: Request) {
   let donnees: FormData;
@@ -39,6 +42,35 @@ export async function POST(requete: Request) {
     return NextResponse.json(
       { erreur: 'Le dépôt est momentanément indisponible. Réessayez dans quelques minutes.' },
       { status: 503 },
+    );
+  }
+
+  /* Lecture du nombre de pages avant tout stockage : inutile d'écrire des
+     fichiers qu'on va refuser. Un PDF illisible est rejeté nommément plutôt
+     que compté pour une page — sinon un document de vingt pages passerait à
+     25 €, et l'erreur ne se verrait qu'à la livraison. */
+  const contenus: { fichier: File; octets: Buffer; pages: number }[] = [];
+  for (const f of fichiers) {
+    const octets = Buffer.from(await f.arrayBuffer());
+    const pages = await compterPages(octets, f.type);
+    if (pages === null) {
+      return NextResponse.json(
+        {
+          erreur: `Nous n'arrivons pas à lire « ${f.name} ». Réenregistrez-le en PDF, ou photographiez chaque page.`,
+        },
+        { status: 400 },
+      );
+    }
+    contenus.push({ fichier: f, octets, pages });
+  }
+
+  const total = contenus.reduce((n, c) => n + c.pages, 0);
+  if (total > MAX_PAGES) {
+    return NextResponse.json(
+      {
+        erreur: `Votre dossier compte ${total} pages, au-delà des ${MAX_PAGES} traitées automatiquement. Écrivez-nous à contact@protranslayte.com, nous le prenons en charge.`,
+      },
+      { status: 400 },
     );
   }
 
@@ -65,16 +97,23 @@ export async function POST(requete: Request) {
 
   try {
     const cles: string[] = [];
-    for (const [i, f] of fichiers.entries()) {
-      const cle = `commandes/${ref}/${String(i + 1).padStart(2, '0')}-${nomSur(f.name)}`;
-      await deposer(cle, Buffer.from(await f.arrayBuffer()), f.type);
+    for (const [i, c] of contenus.entries()) {
+      const cle = `commandes/${ref}/${String(i + 1).padStart(2, '0')}-${nomSur(c.fichier.name)}`;
+      await deposer(cle, c.octets, c.fichier.type);
       cles.push(cle);
     }
+
     await ecrireFiche(ref, {
       reference: ref,
       recuLe: new Date().toISOString(),
       statut: 'depose',
-      fichiers: fichiers.map((f) => ({ nom: f.name, taille: f.size, type: f.type })),
+      pages: total,
+      fichiers: contenus.map((c) => ({
+        nom: c.fichier.name,
+        taille: c.fichier.size,
+        type: c.fichier.type,
+        pages: c.pages,
+      })),
       cles,
     });
 
@@ -91,5 +130,10 @@ export async function POST(requete: Request) {
     );
   }
 
-  return NextResponse.json({ reference: ref, nombre: fichiers.length });
+  return NextResponse.json({
+    reference: ref,
+    nombre: contenus.length,
+    pages: total,
+    detail: contenus.map((c) => ({ nom: c.fichier.name, pages: c.pages })),
+  });
 }

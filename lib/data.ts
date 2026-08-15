@@ -42,6 +42,9 @@ export const COMMANDES: [number, string, number][] = [
     [3,'1 an · trimestres',1],   [2,'1 an · semestres',1]
   ];
 
+/* Les prix s'entendent PAR PAGE, pas par fichier. Un bulletin de lycée en
+   fait souvent deux, un livret scolaire jusqu'à six : facturer au fichier
+   revenait à traduire gratuitement tout ce qui dépasse la première page. */
 export const PRIX_NORMAL = 35;
 export const PRIX_OFFRE = 25;
 
@@ -54,5 +57,11 @@ export const PRIX_OFFRE = 25;
 
    Un seul chiffre à changer ici pour ajuster le tarif partout. */
 export const PRIX_ENVOI = 4.9;
+/** Nombre de fichiers acceptés dans une même commande. */
 export const MAX_DOCS = 40;
+
+/* Plafond de pages par commande. Un cursus complet de quatre ans tourne
+   autour de vingt pages ; au-delà de soixante, mieux vaut un échange par
+   e-mail qu'un dépôt automatique. */
+export const MAX_PAGES = 60;
 export const FIN_OFFRE = new Date(2026, 7, 31, 23, 59, 59);

@@ -1,4 +1,4 @@
-import { MAX_DOCS, PRIX_ENVOI, PRIX_OFFRE } from './data';
+import { MAX_DOCS, MAX_PAGES, PRIX_ENVOI, PRIX_OFFRE } from './data';
 
 /* Règles partagées entre le dépôt, le paiement par carte et le paiement
    express. Les avoir en un seul endroit évite qu'une des trois routes
@@ -31,11 +31,11 @@ export function refusFichiers(fichiers: File[]): string | null {
   return null;
 }
 
-/* Le montant est toujours recalculé côté serveur. Le navigateur peut
-   proposer un prix, il ne le décide jamais. */
-export function montantDe(quantite: number, envoiPostal: boolean) {
-  const q = Math.max(1, Math.min(MAX_DOCS, quantite || 1));
-  return { quantite: q, montant: q * PRIX_OFFRE + (envoiPostal ? PRIX_ENVOI : 0) };
+/* Le montant est toujours recalculé côté serveur, et il se compte EN PAGES.
+   Le navigateur peut proposer un prix, il ne le décide jamais. */
+export function montantDe(pages: number, envoiPostal: boolean) {
+  const p = Math.max(1, Math.min(MAX_PAGES, pages || 1));
+  return { pages: p, montant: p * PRIX_OFFRE + (envoiPostal ? PRIX_ENVOI : 0) };
 }
 
 /** Une référence est-elle bien formée ? Garde-fou avant toute lecture. */

@@ -82,7 +82,7 @@ async function traiter(reference: string, enc: Encaissement) {
     );
   }
 
-  await envoyerEmails(paye, paye.fichiers?.length ?? paye.quantite);
+  await envoyerEmails(paye, paye.fichiers?.length ?? 1);
   console.log(`[webhook] ${reference} payée, e-mails envoyés`);
 }
 

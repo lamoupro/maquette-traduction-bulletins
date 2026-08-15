@@ -17,7 +17,8 @@ type Fiche = {
   recuLe: string;
   client: { email: string; prenom: string; nom: string };
   langues: { source: string; cible: string };
-  quantite: number;
+  pages?: number;
+  fichiers?: { nom: string; pages?: number }[];
   montant: number;
   statut?: 'en_attente_paiement' | 'payee';
   payeLe?: string;
@@ -196,8 +197,12 @@ export default async function Admin({
               {f.client.prenom} {f.client.nom} — <a href={`mailto:${f.client.email}`}>{f.client.email}</a>
             </p>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
-              {f.langues.source} → {f.langues.cible} · {f.quantite} document
-              {f.quantite > 1 ? 's' : ''} ·{' '}
+              {f.langues.source} → {f.langues.cible} ·{' '}
+              {f.fichiers?.length ?? 0} document{(f.fichiers?.length ?? 0) > 1 ? 's' : ''} ·{' '}
+              <strong>
+                {f.pages ?? 0} page{(f.pages ?? 0) > 1 ? 's' : ''}
+              </strong>{' '}
+              ·{' '}
               {f.montant.toLocaleString('fr-FR', {
                 minimumFractionDigits: Number.isInteger(f.montant) ? 0 : 2,
               })}{' '}

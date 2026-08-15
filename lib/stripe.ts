@@ -36,7 +36,7 @@ export async function creerIntention(opts: {
   reference: string;
   montant: number;
   email: string;
-  quantite: number;
+  pages: number;
 }) {
   return stripe().paymentIntents.create({
     amount: centimes(opts.montant),
@@ -44,14 +44,14 @@ export async function creerIntention(opts: {
     // Restreint aux moyens qui savent s'ouvrir en une feuille système.
     automatic_payment_methods: { enabled: true },
     receipt_email: opts.email || undefined,
-    description: `Traduction assermentée — ${opts.quantite} document${opts.quantite > 1 ? 's' : ''} — ${opts.reference}`,
+    description: `Traduction assermentée — ${opts.pages} page${opts.pages > 1 ? 's' : ''} — ${opts.reference}`,
     metadata: { reference: opts.reference },
   });
 }
 
 export async function creerSession(opts: {
   reference: string;
-  quantite: number;
+  pages: number;
   envoiPostal: boolean;
   email: string;
   source: string;
@@ -59,13 +59,13 @@ export async function creerSession(opts: {
 }) {
   const lignes: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     {
-      quantity: opts.quantite,
+      quantity: opts.pages,
       price_data: {
         currency: 'eur',
         unit_amount: centimes(PRIX_OFFRE),
         product_data: {
           name: 'Traduction assermentée',
-          description: `${opts.source} → ${opts.cible} · par document`,
+          description: `${opts.source} → ${opts.cible} · par page`,
         },
       },
     },

@@ -40,6 +40,9 @@ export default function CarteCommande() {
   // Référence du dépôt, obtenue dès la sélection des fichiers.
   const [refDepot, setRefDepot] = useState<string | null>(null);
   const [depotEnCours, setDepotEnCours] = useState(false);
+  // Nombre de pages compté par le serveur, et le détail fichier par fichier.
+  const [pages, setPages] = useState(0);
+  const [detailPages, setDetailPages] = useState<Record<string, number>>({});
 
   const router = useRouter();
   const refFichier = useRef<HTMLInputElement>(null);
@@ -71,10 +74,10 @@ export default function CarteCommande() {
     setEnAttente(lireEnAttente());
   }, []);
 
-  /* Le nombre de documents n'est plus réglable à la main : il est le
-     nombre de fichiers déposés. Un compteur qui peut annoncer « 2 » alors
-     que quatre fichiers sont là, c'est un litige garanti. */
-  const qte = Math.max(1, fichiers.length);
+  /* Le prix se compte en PAGES, jamais en fichiers : un bulletin de lycée
+     en fait souvent deux, un livret scolaire jusqu'à six. Le nombre vient
+     du serveur, qui les a lues dans les documents. */
+  const qte = Math.max(1, pages);
 
   const avant = qte * PRIX_NORMAL;
   const apres = qte * PRIX_OFFRE;
@@ -100,7 +103,6 @@ export default function CarteCommande() {
     ecrireBrouillon({
       source,
       cible,
-      qte: 1,
       email,
       prenom,
       nom,
@@ -156,6 +158,8 @@ export default function CarteCommande() {
     setMessage('');
     if (restant.length === 0) {
       setRefDepot(null);
+      setPages(0);
+      setDetailPages({});
       return;
     }
     void deposer(restant);
@@ -178,10 +182,19 @@ export default function CarteCommande() {
       if (numero !== depotNumero.current) return;
       if (!r.ok) throw new Error(json.erreur || 'Dépôt impossible');
       setRefDepot(json.reference);
+      setPages(json.pages ?? liste.length);
+      setDetailPages(
+        Object.fromEntries(
+          (json.detail ?? []).map((d: { nom: string; pages: number }) => [d.nom, d.pages]),
+        ),
+      );
     } catch (e) {
       if (numero !== depotNumero.current) return;
       setRefDepot(null);
+      setPages(0);
       setMessage(e instanceof Error ? e.message : 'Le dépôt a échoué. Réessayez.');
+      setFichiers([]);
+      setDetailPages({});
     } finally {
       if (numero === depotNumero.current) setDepotEnCours(false);
     }
@@ -204,7 +217,6 @@ export default function CarteCommande() {
       const donnees = new FormData();
       donnees.append('source', source);
       donnees.append('cible', cible);
-      donnees.append('quantite', String(qte));
       donnees.append('email', email);
       donnees.append('prenom', prenom);
       donnees.append('nom', nom);
@@ -232,7 +244,7 @@ export default function CarteCommande() {
         reference: json.reference,
         clientSecret: json.clientSecret,
         montant: json.montant,
-        quantite: qte,
+        pages: qte,
         source,
         cible,
         postal,
@@ -258,8 +270,9 @@ export default function CarteCommande() {
           <span className="ref tabular">DOSSIER N° {enAttente.reference}</span>
         </div>
         <p style={{ margin: 0, fontSize: '0.95rem' }}>
-          Vos {enAttente.quantite > 1 ? 'documents sont déposés' : 'document est déposé'} et vous
-          attendent. Il ne reste qu’à régler <strong>{eur(enAttente.montant)}</strong>.
+          {enAttente.pages} page{enAttente.pages > 1 ? 's' : ''} déposée
+          {enAttente.pages > 1 ? 's' : ''} vous {enAttente.pages > 1 ? 'attendent' : 'attend'}. Il
+          ne reste qu’à régler <strong>{eur(enAttente.montant)}</strong>.
         </p>
         <button
           className="btn btn-primary btn-block"
@@ -360,13 +373,16 @@ export default function CarteCommande() {
           <span className="qty-lecture tabular" aria-live="polite">
             {fichiers.length === 0
               ? 'aucun document'
-              : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''}`}
+              : depotEnCours
+                ? 'lecture en cours…'
+                : `${pages} page${pages > 1 ? 's' : ''}`}
           </span>
         </div>
 
         <div className="price-row">
           <span className="label">
             Traduction assermentée {source} → {cible}
+            {pages > 0 ? ` · ${pages} page${pages > 1 ? 's' : ''} × ${PRIX_OFFRE} €` : ` · ${PRIX_OFFRE} € la page`}
           </span>
           <span className="amount-wrap">
             <s className="amount-old tabular">{eur(avant)}</s>
@@ -418,8 +434,8 @@ export default function CarteCommande() {
             <div className="liste-tete">
               <span>
                 {depotEnCours
-                  ? 'Dépôt en cours…'
-                  : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''} déposé${fichiers.length > 1 ? 's' : ''}`}
+                  ? 'Lecture des documents…'
+                  : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''} · ${pages} page${pages > 1 ? 's' : ''}`}
               </span>
               {!depotEnCours && refDepot ? <span className="liste-ok">✓</span> : null}
             </div>
@@ -428,7 +444,11 @@ export default function CarteCommande() {
                 <span className="doc-nom" title={f.name}>
                   {f.name}
                 </span>
-                <span className="doc-poids tabular">{Math.max(1, Math.round(f.size / 1024))} Ko</span>
+                <span className="doc-poids tabular">
+                  {detailPages[f.name]
+                    ? `${detailPages[f.name]} page${detailPages[f.name] > 1 ? 's' : ''}`
+                    : `${Math.max(1, Math.round(f.size / 1024))} Ko`}
+                </span>
                 <button
                   type="button"
                   className="doc-retirer"
@@ -560,7 +580,9 @@ export default function CarteCommande() {
           disabled={!peutPayer}
           onClick={() => commander('carte')}
         >
-          {envoi ? 'Envoi en cours…' : `Payer ${eur(total)} et faire traduire ${qte > 1 ? 'mes documents' : 'mon document'}`}
+          {envoi
+            ? 'Envoi en cours…'
+            : `Payer ${eur(total)} et faire traduire ${fichiers.length > 1 ? 'mes documents' : 'mon document'}`}
         </button>
 
         {/* Le vrai bouton Apple Pay : il ouvre la feuille du système au doigt,
@@ -590,7 +612,6 @@ export default function CarteCommande() {
                 source,
                 cible,
                 remarque,
-                quantite: qte,
                 envoiPostal: postal,
                 adresse,
                 codePostal,

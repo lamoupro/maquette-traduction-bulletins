@@ -30,7 +30,6 @@ export type DonneesExpress = {
   source: string;
   cible: string;
   remarque: string;
-  quantite: number;
   envoiPostal: boolean;
   adresse: string;
   codePostal: string;

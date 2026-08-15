@@ -21,7 +21,7 @@ export async function POST(requete: Request) {
 
   const texte = (cle: string) => String(corps[cle] ?? '').trim();
 
-  const { refus, commande, quantite, montant } = await preparer({
+  const { refus, commande, pages, montant } = await preparer({
     reference: texte('reference'),
     email: texte('email'),
     prenom: texte('prenom'),
@@ -29,7 +29,6 @@ export async function POST(requete: Request) {
     source: texte('source'),
     cible: texte('cible'),
     remarque: texte('remarque').slice(0, 2000),
-    quantite: Number(corps.quantite) || 1,
     envoiPostal: corps.envoiPostal === true,
     adresse: texte('adresse').slice(0, 200),
     codePostal: texte('codePostal').slice(0, 5),
@@ -51,7 +50,7 @@ export async function POST(requete: Request) {
       reference: commande!.reference,
       montant: montant!,
       email: commande!.client.email,
-      quantite: quantite!,
+      pages: pages!,
     });
     return NextResponse.json({ clientSecret: intention.client_secret, montant });
   } catch (e) {

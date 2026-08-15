@@ -56,7 +56,6 @@ function effacer(cle: string) {
 export type Brouillon = {
   source: string;
   cible: string;
-  qte: number;
   email: string;
   prenom: string;
   nom: string;
@@ -80,7 +79,7 @@ export type EnAttente = {
   reference: string;
   clientSecret: string;
   montant: number;
-  quantite: number;
+  pages: number;
   source: string;
   cible: string;
   postal: boolean;

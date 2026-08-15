@@ -91,8 +91,8 @@ export default function Page() {
             <h1>Vos bulletins et diplômes, traduits et certifiés, sans devis à attendre.</h1>
             <p className="lead">
               <span className="lead-long">
-                Déposez vos documents, choisissez la langue d&apos;arrivée, payez 25&nbsp;€ par
-                document au lieu de 35&nbsp;€. Un traducteur assermenté prend le relais — livraison
+                Déposez vos documents, choisissez la langue d&apos;arrivée, payez 25&nbsp;€ la
+                page au lieu de 35&nbsp;€. Un traducteur assermenté prend le relais — livraison
                 sous 24 à 48&nbsp;h, reconnue par les universités et administrations.
               </span>
               <span className="lead-short">
@@ -185,7 +185,7 @@ export default function Page() {
                 </svg>
               </div>
               <h3>Dépôt des documents</h3>
-              <p>Vous téléversez une photo ou un scan de chaque document et réglez 25&nbsp;€ par document, en une fois.</p>
+              <p>Vous téléversez une photo ou un scan de chaque document. Le nombre de pages est compté automatiquement, et vous réglez 25&nbsp;€ la page, en une fois.</p>
             </div>
             <div className="step">
               <div className="stamp">
@@ -272,7 +272,7 @@ export default function Page() {
           <div className="faq-list">
             <details open>
               <summary>Le prix de 25&nbsp;€ inclut-il vraiment tout ?</summary>
-              <p>Oui. 25&nbsp;€ couvre la traduction assermentée d&apos;un document — bulletin, relevé de notes, livret ou diplôme — quelle que soit la paire de langues, la certification par un traducteur assermenté et la livraison du PDF signé par email.</p>
+              <p>Oui. 25&nbsp;€ couvre la traduction assermentée d&apos;une page, quelle que soit la paire de langues, la certification par un traducteur assermenté et la livraison du PDF signé par email. Le tarif s&apos;entend par page : un bulletin recto verso compte pour deux, et le total s&apos;affiche avant tout paiement.</p>
             </details>
             <details>
               <summary>Combien de temps pour recevoir ma traduction ?</summary>

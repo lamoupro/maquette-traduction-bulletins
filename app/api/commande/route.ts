@@ -18,7 +18,7 @@ export async function POST(requete: Request) {
   const texte = (cle: string) => String(donnees.get(cle) ?? '').trim();
   const moyen = texte('moyen');
 
-  const { refus, commande, quantite, montant } = await preparer({
+  const { refus, commande, pages, montant } = await preparer({
     reference: texte('reference'),
     email: texte('email'),
     prenom: texte('prenom'),
@@ -26,7 +26,6 @@ export async function POST(requete: Request) {
     source: texte('source'),
     cible: texte('cible'),
     remarque: texte('remarque').slice(0, 2000),
-    quantite: Number(donnees.get('quantite')) || 1,
     envoiPostal: texte('envoiPostal') === '1',
     adresse: texte('adresse').slice(0, 200),
     codePostal: texte('codePostal').slice(0, 5),
@@ -48,7 +47,7 @@ export async function POST(requete: Request) {
   try {
     const session = await creerSession({
       reference: commande!.reference,
-      quantite: quantite!,
+      pages: pages!,
       envoiPostal: commande!.envoiPostal,
       email: commande!.client.email,
       source: commande!.langues.source,

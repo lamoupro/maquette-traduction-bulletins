@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import PageLegale, { Champ } from '@/components/PageLegale';
 import { ENTREPRISE } from '@/lib/legal';
-import { MAX_DOCS, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
+import { MAX_DOCS, MAX_PAGES, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
 import { CONSERVATION_JOURS } from '@/lib/stockage';
 
 export const metadata: Metadata = { title: 'Conditions générales de vente — Protranslayte' };
@@ -42,9 +42,19 @@ export default function CGV() {
 
       <h2>Article 3 — Prix</h2>
       <p>
-        Le prix est de <strong>{PRIX_OFFRE} € par document</strong>, toutes taxes comprises. Il est
-        fixe et ne dépend ni de la longueur du document, ni du couple de langues retenu. Une
-        commande peut porter sur {MAX_DOCS} documents au maximum.
+        Le prix est de <strong>{PRIX_OFFRE} € par page</strong>, toutes taxes comprises. Il ne
+        dépend ni de la densité du texte, ni du couple de langues retenu.
+      </p>
+      <p className="legal-encadre">
+        <strong>L&apos;unité facturée est la page, non le fichier.</strong> Un bulletin recto verso
+        compte pour deux pages, un livret scolaire de six pages pour six. Le nombre de pages de
+        chaque document est déterminé automatiquement au moment du dépôt et vous est affiché,
+        document par document, <strong>avant tout paiement</strong>.
+      </p>
+      <p>
+        Une commande peut porter sur {MAX_DOCS} fichiers et {MAX_PAGES} pages au maximum. Au-delà,
+        écrivez-nous à <a href={`mailto:${e.email}`}>{e.email}</a> : votre dossier est pris en
+        charge de la même manière.
       </p>
       <p>
         {e.tva ? (
@@ -59,8 +69,8 @@ export default function CGV() {
       <p>
         L&apos;envoi de l&apos;exemplaire original par voie postale est une option facturée{' '}
         <strong>{PRIX_ENVOI.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €</strong> par
-        commande, quel que soit le nombre de documents. Elle n&apos;est proposée qu&apos;à
-        destination de la France.
+        commande, quel que soit le nombre de pages. Elle n&apos;est proposée qu&apos;à destination
+        de la France.
       </p>
       <p>
         Les prix barrés affichés sur le site correspondent au tarif effectivement pratiqué
@@ -71,8 +81,11 @@ export default function CGV() {
       <h2>Article 4 — Commande</h2>
       <p>La commande se déroule en trois étapes :</p>
       <ol>
-        <li>choix de la langue source, de la langue souhaitée et du nombre de documents ;</li>
-        <li>dépôt des documents à traduire, au format PDF ou image, 10 Mo au maximum par fichier ;</li>
+        <li>choix de la langue source et de la langue souhaitée ;</li>
+        <li>
+          dépôt des documents à traduire, au format PDF ou image, 10 Mo au maximum par fichier. Le
+          nombre de pages est compté et le montant affiché avant toute saisie de paiement ;
+        </li>
         <li>saisie des coordonnées puis paiement.</li>
       </ol>
       <p>
