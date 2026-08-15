@@ -39,13 +39,13 @@ export type DonneesExpress = {
 
 function Bouton({
   donnees,
-  montant,
   actif,
+  manque,
   surErreur,
 }: {
   donnees: DonneesExpress;
-  montant: number;
   actif: boolean;
+  manque: string;
   surErreur: (m: string) => void;
 }) {
   const stripe = useStripe();
@@ -62,6 +62,7 @@ function Bouton({
     .join(' ');
 
   return (
+    <>
     <div className={classes} aria-disabled={!actif}>
       <ExpressCheckoutElement
         options={{
@@ -81,6 +82,10 @@ function Bouton({
         }}
         onConfirm={async () => {
           if (!stripe || !elements) return;
+          if (!donnees.reference) {
+            surErreur('Vos documents finissent de se déposer, réessayez dans un instant.');
+            return;
+          }
           try {
             const r = await fetch('/api/express', {
               method: 'POST',
@@ -107,10 +112,12 @@ function Bouton({
           }
         }}
       />
-      {visible && !actif ? (
-        <p className="express-aide">Renseignez votre e-mail pour payer en un geste</p>
-      ) : null}
     </div>
+    {/* La mention vit hors du bloc grisé : à l'intérieur, elle héritait de
+        l'opacité à 40 % et devenait illisible, alors que c'est précisément
+        elle qui explique pourquoi le bouton est éteint. */}
+    {visible && !actif ? <p className="express-aide">{manque}</p> : null}
+    </>
   );
 }
 
@@ -118,10 +125,13 @@ export default function BoutonExpress(props: {
   donnees: DonneesExpress;
   montant: number;
   actif: boolean;
+  manque: string;
   surErreur: (m: string) => void;
 }) {
-  // Sans clé publique, ou sans dossier déposé, il n'y a rien à monter.
-  if (!stripePromise || !props.donnees.reference || props.montant <= 0) return null;
+  /* Monté dès le premier écran, avant même le dépôt : le visiteur doit voir
+     tout de suite qu'il pourra payer en un geste. Il reste grisé et inerte
+     tant qu'il manque quelque chose. */
+  if (!stripePromise || props.montant <= 0) return null;
 
   const centimes = Math.round(props.montant * 100);
 

@@ -24,7 +24,6 @@ const cpValide = (v: string) => /^\d{5}$/.test(v.trim());
 export default function CarteCommande() {
   const [source, setSource] = useState('Français');
   const [cible, setCible] = useState('Anglais');
-  const [qte, setQte] = useState(1);
   const [fichiers, setFichiers] = useState<File[]>([]);
   const [email, setEmail] = useState('');
   const [prenom, setPrenom] = useState('');
@@ -44,6 +43,7 @@ export default function CarteCommande() {
 
   const router = useRouter();
   const refFichier = useRef<HTMLInputElement>(null);
+  const depotNumero = useRef(0);
   const refCarte = useRef<HTMLDivElement>(null);
   const [cachetVisible, setCachetVisible] = useState(false);
 
@@ -58,7 +58,6 @@ export default function CarteCommande() {
     if (b) {
       if (b.source) setSource(b.source);
       if (b.cible) setCible(b.cible);
-      if (b.qte) setQte(b.qte);
       if (b.email) setEmail(b.email);
       if (b.prenom) setPrenom(b.prenom);
       if (b.nom) setNom(b.nom);
@@ -71,6 +70,11 @@ export default function CarteCommande() {
 
     setEnAttente(lireEnAttente());
   }, []);
+
+  /* Le nombre de documents n'est plus réglable à la main : il est le
+     nombre de fichiers déposés. Un compteur qui peut annoncer « 2 » alors
+     que quatre fichiers sont là, c'est un litige garanti. */
+  const qte = Math.max(1, fichiers.length);
 
   const avant = qte * PRIX_NORMAL;
   const apres = qte * PRIX_OFFRE;
@@ -96,7 +100,7 @@ export default function CarteCommande() {
     ecrireBrouillon({
       source,
       cible,
-      qte,
+      qte: 1,
       email,
       prenom,
       nom,
@@ -106,7 +110,7 @@ export default function CarteCommande() {
       codePostal,
       ville,
     });
-  }, [source, cible, qte, email, prenom, nom, remarque, postal, adresse, codePostal, ville]);
+  }, [source, cible, email, prenom, nom, remarque, postal, adresse, codePostal, ville]);
 
   // Barre collante : visible dès que la carte sort de l'écran.
   useEffect(() => {
@@ -120,29 +124,66 @@ export default function CarteCommande() {
     return () => obs.disconnect();
   }, []);
 
+  /* Les sélections s'ajoutent au lieu de se remplacer.
+
+     Avant, choisir un bulletin puis deux autres faisait disparaître le
+     premier sans un mot — et laissait ses fichiers orphelins sur le
+     serveur, stockés et facturés par personne. */
   async function surFichiers(liste: FileList | null) {
     if (!liste || liste.length === 0) return;
-    const tab = Array.from(liste);
-    setFichiers(tab);
-    if (tab.length > qte) setQte(Math.min(tab.length, MAX_DOCS));
-    setMessage('');
 
-    /* Les documents partent immédiatement, sans attendre le paiement.
-       C'est ce qui permet à la feuille Apple Pay de s'ouvrir au doigt :
-       elle ne peut pas patienter le temps d'un téléversement. */
-    setRefDepot(null);
+    const ajoutes = Array.from(liste);
+    const fusion = [...fichiers];
+    for (const f of ajoutes) {
+      // Même nom et même taille : c'est le même document, on ne le double pas.
+      if (!fusion.some((d) => d.name === f.name && d.size === f.size)) fusion.push(f);
+    }
+    const complet = fusion.slice(0, MAX_DOCS);
+
+    setFichiers(complet);
+    setMessage(
+      fusion.length > MAX_DOCS ? `Maximum ${MAX_DOCS} documents par commande.` : '',
+    );
+    await deposer(complet);
+
+    // Sans ça, resélectionner le même fichier ne déclencherait rien.
+    if (refFichier.current) refFichier.current.value = '';
+  }
+
+  function retirer(index: number) {
+    const restant = fichiers.filter((_, i) => i !== index);
+    setFichiers(restant);
+    setMessage('');
+    if (restant.length === 0) {
+      setRefDepot(null);
+      return;
+    }
+    void deposer(restant);
+  }
+
+  /* Le dépôt part sans attendre le paiement : c'est ce qui permet à la
+     feuille Apple Pay de s'ouvrir au doigt, elle ne peut pas patienter le
+     temps d'un téléversement. La liste complète est renvoyée à chaque fois,
+     sous la même référence. */
+  async function deposer(liste: File[]) {
+    const numero = ++depotNumero.current;
     setDepotEnCours(true);
     try {
       const d = new FormData();
-      tab.forEach((f) => d.append('fichiers', f));
+      liste.forEach((f) => d.append('fichiers', f));
+      if (refDepot) d.append('reference', refDepot);
       const r = await fetch('/api/depot', { method: 'POST', body: d });
       const json = await r.json();
+      // Un dépôt plus récent a déjà répondu : on ignore celui-ci.
+      if (numero !== depotNumero.current) return;
       if (!r.ok) throw new Error(json.erreur || 'Dépôt impossible');
       setRefDepot(json.reference);
     } catch (e) {
+      if (numero !== depotNumero.current) return;
+      setRefDepot(null);
       setMessage(e instanceof Error ? e.message : 'Le dépôt a échoué. Réessayez.');
     } finally {
-      setDepotEnCours(false);
+      if (numero === depotNumero.current) setDepotEnCours(false);
     }
   }
 
@@ -313,26 +354,13 @@ export default function CarteCommande() {
               diplôme. Tant que cette ligne ne le nomme pas, il ne l'envoie pas,
               quelle que soit la page d'accueil. */}
           <span className="name">Bulletins et diplômes</span>
-          <span className="qty">
-            <button
-              type="button"
-              aria-label="Retirer un document"
-              disabled={qte <= 1}
-              onClick={() => setQte((q) => Math.max(1, q - 1))}
-            >
-              −
-            </button>
-            <span className="qty-val" aria-live="polite">
-              {qte}
-            </span>
-            <button
-              type="button"
-              aria-label="Ajouter un document"
-              disabled={qte >= MAX_DOCS}
-              onClick={() => setQte((q) => Math.min(MAX_DOCS, q + 1))}
-            >
-              +
-            </button>
+          {/* Le nombre n'est plus réglable : il compte les fichiers déposés.
+              Un compteur pouvant contredire la liste était une promesse de
+              litige, puisque le prix est au document. */}
+          <span className="qty-lecture tabular" aria-live="polite">
+            {fichiers.length === 0
+              ? 'aucun document'
+              : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''}`}
           </span>
         </div>
 
@@ -369,15 +397,10 @@ export default function CarteCommande() {
               strokeLinejoin="round"
             />
           </svg>
-          <span className="u-title">Déposez vos documents ici</span>
+          <span className="u-title">
+            {fichiers.length === 0 ? 'Déposez vos documents ici' : 'Ajouter d’autres documents'}
+          </span>
           <span className="u-sub">Bulletins, relevés, diplômes · plusieurs fichiers à la fois</span>
-          {fichiers.length > 0 && (
-            <span className="fichiers" style={{ display: 'flex' }}>
-              {fichiers.map((f) => (
-                <span key={f.name}>✓ {f.name}</span>
-              ))}
-            </span>
-          )}
           <input
             type="file"
             ref={refFichier}
@@ -386,6 +409,38 @@ export default function CarteCommande() {
             onChange={(e) => surFichiers(e.target.files)}
           />
         </label>
+
+        {/* La liste vit hors du <label> : à l'intérieur, chaque clic sur une
+            croix rouvrait le sélecteur de fichiers au lieu de retirer le
+            document. */}
+        {fichiers.length > 0 && (
+          <div className="liste-docs revele">
+            <div className="liste-tete">
+              <span>
+                {depotEnCours
+                  ? 'Dépôt en cours…'
+                  : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''} déposé${fichiers.length > 1 ? 's' : ''}`}
+              </span>
+              {!depotEnCours && refDepot ? <span className="liste-ok">✓</span> : null}
+            </div>
+            {fichiers.map((f, i) => (
+              <div className="doc-ligne" key={`${f.name}-${f.size}-${i}`}>
+                <span className="doc-nom" title={f.name}>
+                  {f.name}
+                </span>
+                <span className="doc-poids tabular">{Math.max(1, Math.round(f.size / 1024))} Ko</span>
+                <button
+                  type="button"
+                  className="doc-retirer"
+                  aria-label={`Retirer ${f.name}`}
+                  onClick={() => retirer(i)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {fichiers.length > 0 && (
           <div className="contact">
@@ -512,14 +567,22 @@ export default function CarteCommande() {
             sans page intermédiaire. Il apparaît dès le dépôt — grisé tant que
             l'adresse électronique manque, puis actif. Le nom vient de la
             feuille, et figure de toute façon sur les bulletins. */}
-        {refDepot && (
-          <>
-            <div className="pay-divider">ou</div>
-            <BoutonExpress
-              montant={total}
-              actif={emailPret && adresseComplete}
-              surErreur={setMessage}
-              donnees={{
+        <>
+          <div className="pay-divider">ou</div>
+          <BoutonExpress
+            montant={total}
+            actif={Boolean(refDepot) && emailPret && adresseComplete && !depotEnCours}
+            manque={
+              fichiers.length === 0
+                ? 'Déposez vos documents pour payer en un geste'
+                : depotEnCours || !refDepot
+                  ? 'Vos documents finissent de se déposer…'
+                  : !emailPret
+                    ? 'Renseignez votre e-mail pour payer en un geste'
+                    : 'Complétez votre adresse postale'
+            }
+            surErreur={setMessage}
+            donnees={{
                 reference: refDepot,
                 email,
                 prenom,
@@ -532,10 +595,9 @@ export default function CarteCommande() {
                 adresse,
                 codePostal,
                 ville,
-              }}
-            />
-          </>
-        )}
+            }}
+          />
+        </>
 
         <div className="toast">{message}</div>
 

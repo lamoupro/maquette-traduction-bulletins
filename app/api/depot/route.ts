@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
-import { deposer, ecrireFiche, nomSur, stockageConfigure } from '@/lib/stockage';
-import { reference, refusFichiers } from '@/lib/commande';
+import {
+  deposer,
+  ecrireFiche,
+  lireFiche,
+  nomSur,
+  stockageConfigure,
+  supprimer,
+} from '@/lib/stockage';
+import { reference, referenceValide, refusFichiers } from '@/lib/commande';
 
 export const runtime = 'nodejs';
 
@@ -35,7 +42,26 @@ export async function POST(requete: Request) {
     );
   }
 
-  const ref = reference();
+  /* Le visiteur peut ajouter des documents en plusieurs fois. On réutilise
+     alors la même référence et on remplace intégralement son contenu :
+     créer un dépôt par sélection laisserait les premiers fichiers orphelins,
+     stockés et facturés par personne. */
+  const ancienne = String(donnees.get('reference') ?? '').trim();
+  let ref = reference();
+  let aPurger: string[] = [];
+
+  if (referenceValide(ancienne)) {
+    try {
+      const fiche = await lireFiche(`commandes/${ancienne}/commande.json`);
+      // Un dossier déjà payé ou en cours de paiement ne se réécrit pas.
+      if (fiche.statut === 'depose') {
+        ref = ancienne;
+        aPurger = fiche.cles ?? [];
+      }
+    } catch {
+      /* référence inconnue : on repart sur un dépôt neuf */
+    }
+  }
 
   try {
     const cles: string[] = [];
@@ -51,6 +77,12 @@ export async function POST(requete: Request) {
       fichiers: fichiers.map((f) => ({ nom: f.name, taille: f.size, type: f.type })),
       cles,
     });
+
+    // Les anciens fichiers ne partent qu'une fois les nouveaux en place : en
+    // cas d'échec au milieu, mieux vaut un doublon qu'un dossier vide.
+    for (const vieille of aPurger) {
+      if (!cles.includes(vieille)) await supprimer(vieille).catch(() => {});
+    }
   } catch (e) {
     console.error('[depot] échec du stockage', e);
     return NextResponse.json(

@@ -520,3 +520,21 @@
   .express-zone.est-inactif{filter:grayscale(1);opacity:0.4;pointer-events:none;}
   .express-aide{margin:7px 0 0;font-size:0.76rem;color:var(--ink-soft);text-align:center;}
   @media (prefers-reduced-motion: reduce){ .express-zone{transition:none;} }
+
+  /* ---------- LISTE DES DOCUMENTS DÉPOSÉS ----------
+     Vit hors du bouton de dépôt : à l'intérieur, chaque croix rouvrait le
+     sélecteur de fichiers au lieu de retirer le document. */
+  .liste-docs{border:1px solid var(--rule);border-radius:7px;background:var(--paper);
+    padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+  .liste-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    font-size:0.8rem;font-weight:600;color:var(--ink);}
+  .liste-ok{color:var(--verified);font-weight:700;}
+  .doc-ligne{display:flex;align-items:center;gap:9px;font-size:0.82rem;color:var(--ink-soft);}
+  .doc-nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .doc-poids{flex:none;font-size:0.74rem;opacity:0.75;}
+  .doc-retirer{flex:none;background:none;border:none;cursor:pointer;padding:2px 5px;
+    color:var(--ink-soft);font-size:0.9rem;line-height:1;border-radius:4px;}
+  .doc-retirer:hover{background:#FDE8E8;color:#A32020;}
+
+  /* Le nombre de documents, en lecture seule : il compte les fichiers. */
+  .qty-lecture{font-size:0.82rem;font-weight:600;color:var(--brass-deep);white-space:nowrap;}
