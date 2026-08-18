@@ -3,6 +3,7 @@ import BandeauOffre from '@/components/BandeauOffre';
 import Carrousel from '@/components/Carrousel';
 import CarteCommande from '@/components/CarteCommande';
 import Comparateur from '@/components/Comparateur';
+import DonneesStructurees from '@/components/DonneesStructurees';
 import Logo from '@/components/Logo';
 import { AVIS } from '@/lib/data';
 
@@ -27,19 +28,19 @@ function SerieLogos({ muet }: { muet?: boolean }) {
       <div className="logo-item" {...attrs}>
         <span className="logo-chip">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="ata" src="/ata.png" width={320} height={320} alt="American Translators Association" />
+          <img className="ata" src="/ata.png" width={170} height={170} alt="American Translators Association" />
         </span>
       </div>
       <div className="logo-item" {...attrs}>
         <span className="logo-chip">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="atc" src="/atc.png" width={640} height={165} alt="Association of Translation Companies" />
+          <img className="atc" src="/atc.png" width={340} height={87} alt="Association of Translation Companies" />
         </span>
       </div>
       <div className="logo-item" {...attrs}>
         <span className="logo-chip">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="th" src="/th.png" width={340} height={280} alt="Trackhouse" />
+          <img className="th" src="/th.png" width={150} height={123} alt="Trackhouse" />
         </span>
         <div className="badge-copy">
           <span className="badge-name">Trackhouse</span>
@@ -63,6 +64,7 @@ function SerieLogos({ muet }: { muet?: boolean }) {
 export default function Page() {
   return (
     <>
+      <DonneesStructurees />
       <BandeauOffre />
 
       <header className="nav">
@@ -82,7 +84,10 @@ export default function Page() {
         </div>
       </header>
 
-      <section className="hero">
+      {/* Repère principal : permet aux lecteurs d'écran de sauter la
+          navigation et d'atteindre directement le contenu. */}
+      <main>
+        <section className="hero">
         <div className="wrap">
           <div className="hero-intro">
             {/* « assermentée » plutôt que « certifiée » : 1K–10K recherches
@@ -288,7 +293,8 @@ export default function Page() {
             </details>
           </div>
         </div>
-      </section>
+        </section>
+      </main>
 
       {/* Notifications d'achat retirées du site le 13 août 2026, sur décision
           de Martin. Elles reposaient sur 195 acheteurs fictifs : une preuve
@@ -312,7 +318,7 @@ export default function Page() {
               </p>
             </div>
             <div>
-              <h4>Service</h4>
+              <h3>Service</h3>
               <ul>
                 <li><a href="#process">Comment ça marche</a></li>
                 <li><a href="#documents">Documents acceptés</a></li>
@@ -320,7 +326,7 @@ export default function Page() {
               </ul>
             </div>
             <div>
-              <h4>Entreprise</h4>
+              <h3>Entreprise</h3>
               <ul>
                 <li><Link href="/mentions-legales">Mentions légales</Link></li>
                 <li><Link href="/cgv">CGV</Link></li>
@@ -328,7 +334,7 @@ export default function Page() {
               </ul>
             </div>
             <div>
-              <h4>Support</h4>
+              <h3>Support</h3>
               <ul>
                 <li><a href="#faq">FAQ</a></li>
                 <li><Link href="/contact">Contact</Link></li>

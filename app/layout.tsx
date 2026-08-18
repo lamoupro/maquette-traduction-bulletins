@@ -7,8 +7,11 @@ export const metadata: Metadata = {
   title: 'Traduction assermentée de bulletins et diplômes — 25 € sous 48 h',
   description:
     'Traduction assermentée et certifiée de bulletins de notes, relevés et diplômes par un traducteur agréé près une cour d’appel. Prix fixe de 25 € la page, livrée en 24 à 48 h, sans devis à attendre.',
-  // Le site reste hors index tant qu'il n'est pas commercialement prêt.
-  robots: { index: false, follow: false },
+  // Ouvert à l'indexation le 16 août 2026, en même temps que la campagne
+  // Google Ads : le site est commercialement prêt, et le référencement
+  // naturel met plusieurs semaines à s'installer.
+  robots: { index: true, follow: true },
+  alternates: { canonical: 'https://protranslayte.com/' },
 };
 
 export const viewport: Viewport = {
