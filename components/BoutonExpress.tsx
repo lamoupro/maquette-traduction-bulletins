@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { useEffect, useState } from 'react';
+import type { Stripe } from '@stripe/stripe-js';
 import {
   Elements,
   ExpressCheckoutElement,
@@ -20,7 +20,57 @@ import {
    l'autorise, et ça évite d'ouvrir un paiement pour un geste abandonné. */
 
 const cle = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = cle ? loadStripe(cle) : null;
+
+/* Stripe.js pèse plusieurs centaines de kilo-octets et bloque le fil
+   principal une fois exécuté. Le charger au niveau du module le mettait sur
+   le chemin critique de la page d'accueil : treize secondes avant l'affichage
+   du contenu sur un téléphone en 4G, pour un script dont le visiteur n'a
+   besoin qu'au moment de payer.
+
+   Il part donc une fois la page rendue et le fil principal libre. La feuille
+   d'Apple reste disponible bien avant que le formulaire soit rempli — le
+   visiteur doit d'abord choisir ses langues et déposer ses documents. */
+let promesse: Promise<Stripe | null> | null = null;
+
+function chargerStripe() {
+  if (!cle) return null;
+  if (!promesse) {
+    promesse = import('@stripe/stripe-js').then((m) => m.loadStripe(cle));
+  }
+  return promesse;
+}
+
+/** Renvoie Stripe une fois la page libre, pas avant. */
+function useStripeDiffere() {
+  const [stripe, setStripe] = useState<Promise<Stripe | null> | null>(null);
+
+  useEffect(() => {
+    if (!cle) return;
+    let annule = false;
+    const lancer = () => {
+      if (!annule) setStripe(chargerStripe());
+    };
+
+    // requestIdleCallback attend que le fil principal ait fini son travail.
+    // Safari ne le connaît toujours pas : un délai court y joue le même rôle.
+    const w = window as typeof window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const oisif = typeof w.requestIdleCallback === 'function';
+    const id = oisif
+      ? w.requestIdleCallback!(lancer, { timeout: 2500 })
+      : window.setTimeout(lancer, 1200);
+
+    return () => {
+      annule = true;
+      if (oisif) w.cancelIdleCallback?.(id);
+      else clearTimeout(id);
+    };
+  }, []);
+
+  return stripe;
+}
 
 export type DonneesExpress = {
   reference: string | null;
@@ -130,6 +180,7 @@ export default function BoutonExpress(props: {
   /* Monté dès le premier écran, avant même le dépôt : le visiteur doit voir
      tout de suite qu'il pourra payer en un geste. Il reste grisé et inerte
      tant qu'il manque quelque chose. */
+  const stripePromise = useStripeDiffere();
   if (!stripePromise || props.montant <= 0) return null;
 
   const centimes = Math.round(props.montant * 100);
