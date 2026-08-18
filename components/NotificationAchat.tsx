@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ACHETEURS, COMMANDES, PAYS, TARIFS } from '@/lib/data';
+import { ACHETEURS, PRIX_OFFRE } from '@/lib/data';
 
 /* NOTIFICATION D'ACHAT — CONTENU DE DÉMONSTRATION.
    Les acheteurs sont fictifs. À brancher sur les vraies commandes avant toute
@@ -17,33 +17,27 @@ const PREMIER = 4000;
 const INTERVALLE = 30000;
 const DUREE = 6500;
 
-const SYMBOLE: Record<string, string> = {
-  EUR: '€', CHF: 'CHF', GBP: '£', CAD: '$ CA',
-  MAD: 'MAD', DZD: 'DA', TND: 'DT', XOF: 'FCFA', AED: 'AED',
-};
-
 type Notif = { nom: string; initiale: string; ligne: string; quand: string };
 
 function tirage(index: number): Notif {
-  const [nomBrut, , pays] = ACHETEURS[index % ACHETEURS.length].split('|');
+  const [nomBrut] = ACHETEURS[index % ACHETEURS.length].split('|');
   // La casse est volontairement irrégulière : de vrais inscrits saisissent
   // leur nom en majuscules, en minuscules ou mélangé.
   const nom = index % 7 === 0 ? nomBrut.toUpperCase() : index % 11 === 0 ? nomBrut.toLowerCase() : nomBrut;
 
-  const pond: [number, string, number][] = [];
-  COMMANDES.forEach((c) => {
-    for (let i = 0; i < c[2]; i++) pond.push(c);
-  });
-  const cmd = pond[Math.floor(Math.random() * pond.length)];
-
-  const [devise, unite] = TARIFS[pays] ?? TARIFS.FR;
-  const montant = `${(cmd[0] * unite).toLocaleString('fr-FR')} ${SYMBOLE[devise] ?? devise}`;
+  /* En euros et comptées en pages, comme la grille du site : le tarif est le
+     même pour tout le monde, et une devise locale laissait croire à une autre
+     grille. « Documents » aurait laissé entendre 25 € le document — un
+     bulletin en fait souvent deux. Huit à quatorze pages, c'est l'ordre de
+     grandeur d'un cursus de la troisième à la terminale. */
+  const pages = 8 + Math.floor(Math.random() * 7);
+  const montant = `${(pages * PRIX_OFFRE).toLocaleString('fr-FR')} €`;
 
   const m = 2 + Math.floor(Math.random() * 180);
   const h = Math.round(m / 60);
   const quand = m < 60 ? `il y a ${m} min` : `il y a ${h} heure${h > 1 ? 's' : ''}`;
 
-  return { nom, initiale: nomBrut.charAt(0).toUpperCase(), ligne: `${cmd[0]} documents · ${montant}`, quand };
+  return { nom, initiale: nomBrut.charAt(0).toUpperCase(), ligne: `${pages} pages · ${montant}`, quand };
 }
 
 export default function NotificationAchat() {
