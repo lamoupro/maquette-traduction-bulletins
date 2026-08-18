@@ -9,7 +9,11 @@ import { ACHETEURS, COMMANDES, PAYS, TARIFS } from '@/lib/data';
    une pratique commerciale trompeuse. */
 
 const CLE_REFUS = 'protranslayte:achats-refuses';
-const PREMIER = 8000;
+/* Deux notifications par visite, pas deux dans une vie : le compteur vit en
+   mémoire et repart à zéro à chaque arrivée sur le site. Un visiteur qui
+   revient trois jours plus tard les revoit — c'est le comportement voulu. */
+const MAX_VUES = 2;
+const PREMIER = 4000;
 const INTERVALLE = 30000;
 const DUREE = 6500;
 
@@ -47,6 +51,7 @@ export default function NotificationAchat() {
   const [visible, setVisible] = useState(false);
   const refBoite = useRef<HTMLDivElement>(null);
   const refusRef = useRef(0);
+  const vuesRef = useRef(0);
 
   useEffect(() => {
     try {
@@ -55,6 +60,7 @@ export default function NotificationAchat() {
       refusRef.current = 0;
     }
     // Deux refus : le visiteur a clairement signifié qu'il n'en veut pas.
+    // C'est le seul cas où l'on renonce durablement à les lui montrer.
     if (refusRef.current >= 2) return;
 
     let curseur = Math.floor(Math.random() * ACHETEURS.length);
@@ -70,15 +76,16 @@ export default function NotificationAchat() {
     };
 
     const afficher = () => {
-      if (arrete) return;
+      if (arrete || vuesRef.current >= MAX_VUES) return;
       if (enCommande()) {
         suivant = setTimeout(afficher, INTERVALLE);
         return;
       }
       setNotif(tirage(curseur++));
       setVisible(true);
+      vuesRef.current += 1;
       masque = setTimeout(() => setVisible(false), DUREE);
-      suivant = setTimeout(afficher, INTERVALLE);
+      if (vuesRef.current < MAX_VUES) suivant = setTimeout(afficher, INTERVALLE);
     };
 
     suivant = setTimeout(afficher, PREMIER);
