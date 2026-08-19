@@ -29,6 +29,29 @@ type Fiche = {
   cles?: string[];
 };
 
+/* Une commande écrite partiellement — dépôt interrompu, format plus ancien —
+   suffisait à faire tomber tout le tableau de bord : le try/catch protégeait
+   l'analyse du JSON, pas la forme de l'objet obtenu. On donne donc une valeur
+   sûre à chaque champ que le rendu lit sans précaution. */
+function normaliser(brut: unknown, cle: string): Fiche | null {
+  if (!brut || typeof brut !== 'object') return null;
+  const f = brut as Partial<Fiche>;
+  if (!f.reference && !f.recuLe) return null;
+  return {
+    ...f,
+    reference: f.reference ?? cle.split('/')[1] ?? '—',
+    recuLe: f.recuLe ?? '',
+    client: {
+      email: f.client?.email ?? '',
+      prenom: f.client?.prenom ?? '',
+      nom: f.client?.nom ?? '',
+    },
+    langues: { source: f.langues?.source ?? '—', cible: f.langues?.cible ?? '—' },
+    fichiers: f.fichiers ?? [],
+    montant: typeof f.montant === 'number' ? f.montant : 0,
+  };
+}
+
 async function connexion(donnees: FormData) {
   'use server';
   const saisi = String(donnees.get('motdepasse') ?? '');
@@ -103,16 +126,46 @@ export default async function Admin({
     );
   }
 
-  const objets = await listerCommandes();
+  /* Le stockage peut répondre en erreur : identifiants révoqués, bucket
+     renommé, panne de Cloudflare. Laisser l'exception remonter transformait
+     le tableau de bord en page 500, sans indice sur la cause. */
+  let objets: Awaited<ReturnType<typeof listerCommandes>>;
+  try {
+    objets = await listerCommandes();
+  } catch (err) {
+    return (
+      <main className="wrap" style={{ padding: '48px 24px' }}>
+        <h1 style={{ fontSize: '1.4rem' }}>Administration</h1>
+        <p style={{ color: '#B3261E' }}>
+          Le stockage R2 a refusé la requête. Les variables sont présentes, mais l’appel échoue.
+        </p>
+        <pre
+          style={{
+            background: '#F6F6F4',
+            padding: 12,
+            borderRadius: 5,
+            fontSize: '0.8rem',
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {err instanceof Error ? `${err.name} : ${err.message}` : String(err)}
+        </pre>
+      </main>
+    );
+  }
+
   const fiches: Fiche[] = [];
+  let illisibles = 0;
   for (const o of objets.filter((x) => x.cle.endsWith('/commande.json'))) {
     try {
-      fiches.push(await lireFiche(o.cle));
+      const fiche = normaliser(await lireFiche(o.cle), o.cle);
+      if (fiche) fiches.push(fiche);
+      else illisibles += 1;
     } catch {
-      /* fiche illisible : on l'ignore plutôt que de casser la page */
+      illisibles += 1;
     }
   }
-  fiches.sort((a, b) => b.recuLe.localeCompare(a.recuLe));
+  fiches.sort((a, b) => (b.recuLe ?? '').localeCompare(a.recuLe ?? ''));
 
   return (
     <main className="wrap" style={{ padding: '40px 24px 80px' }}>
@@ -144,6 +197,14 @@ export default async function Admin({
       <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem', marginTop: 0 }}>
         {fiches.length} commande{fiches.length > 1 ? 's' : ''} · documents conservés{' '}
         {CONSERVATION_JOURS} jours
+        {illisibles > 0 && (
+          <>
+            {' · '}
+            <span style={{ color: '#B3261E' }}>
+              {illisibles} fiche{illisibles > 1 ? 's' : ''} illisible{illisibles > 1 ? 's' : ''}
+            </span>
+          </>
+        )}
       </p>
 
       {/* Export des ventes venues d'une annonce, à déposer dans Google Ads.
@@ -204,8 +265,8 @@ export default async function Admin({
                 </span>
               </span>
               <span style={{ color: 'var(--ink-soft)', fontSize: '0.82rem' }}>
-                {new Date(f.recuLe).toLocaleString('fr-FR')}
-                {perimee(f.recuLe) && ' · à supprimer'}
+                {f.recuLe ? new Date(f.recuLe).toLocaleString('fr-FR') : 'date inconnue'}
+                {f.recuLe && perimee(f.recuLe) && ' · à supprimer'}
               </span>
             </div>
             <p style={{ margin: '8px 0 4px', fontSize: '0.94rem' }}>
