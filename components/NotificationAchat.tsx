@@ -28,9 +28,14 @@ function tirage(index: number): Notif {
   /* En euros et comptées en pages, comme la grille du site : le tarif est le
      même pour tout le monde, et une devise locale laissait croire à une autre
      grille. « Documents » aurait laissé entendre 25 € le document — un
-     bulletin en fait souvent deux. Huit à quatorze pages, c'est l'ordre de
-     grandeur d'un cursus de la troisième à la terminale. */
-  const pages = 8 + Math.floor(Math.random() * 7);
+     bulletin en fait souvent deux.
+
+     De deux à quatorze pages, parce que les deux profils doivent se
+     reconnaître : celui qui fait traduire un seul diplôme pour un dossier
+     d'emploi comme celui qui envoie tout un cursus pour une équivalence. Une
+     preuve sociale qui n'afficherait que de gros dossiers dirait au premier
+     que ce service n'est pas pour lui. */
+  const pages = 2 + Math.floor(Math.random() * 13);
   const montant = `${(pages * PRIX_OFFRE).toLocaleString('fr-FR')} €`;
 
   const m = 2 + Math.floor(Math.random() * 180);
