@@ -119,12 +119,14 @@
   /* ---------- COMPARATEUR AVANT / APRÈS ---------- */
   .compare-card{background:var(--paper-raised);border:1px solid var(--rule);border-radius:10px;padding:20px;box-shadow:0 20px 44px -28px var(--shadow);}
 
-  /* Onglets de document. Le trait de base court sur toute la largeur pour
-     rattacher visuellement les deux boutons au cadre qui les suit. */
-  .compare-tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:16px;}
-  .compare-tab{appearance:none;background:none;border:0;padding:9px 14px;font:inherit;font-size:0.92rem;
+  /* Onglets de document, en deux moitiés égales : le diplôme occupe la gauche,
+     le bulletin la droite, et le trait actif couvre exactement sa moitié. La
+     grille plutôt qu'un flex, pour que la coupe tombe au milieu quelle que
+     soit la longueur des deux libellés. */
+  .compare-tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule);margin-bottom:16px;}
+  .compare-tab{appearance:none;background:none;border:0;padding:10px 12px;font:inherit;font-size:0.92rem;
     font-weight:600;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;
-    margin-bottom:-1px;border-radius:6px 6px 0 0;transition:color 0.12s ease;}
+    margin-bottom:-1px;text-align:center;transition:color 0.12s ease;}
   .compare-tab:hover{color:var(--ink);}
   .compare-tab.actif{color:var(--brass);border-bottom-color:var(--brass);}
   .compare-tab:focus-visible{outline:3px solid var(--brass-deep);outline-offset:-2px;}
@@ -248,7 +250,7 @@
     .compare-card{padding:14px;}
     .compare-head h3{font-size:0.98rem;}
     .compare-tabs{margin-bottom:12px;}
-    .compare-tab{padding:8px 11px;font-size:0.86rem;}
+    .compare-tab{padding:9px 6px;font-size:0.84rem;}
   }
 
   /* ---------- NOTIFICATION D'ACHAT (démonstration) ---------- */
