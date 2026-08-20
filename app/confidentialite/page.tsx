@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import PageLegale, { Champ } from '@/components/PageLegale';
-import { ENTREPRISE, SOUS_TRAITANTS } from '@/lib/legal';
+import { ENTREPRISE, SOUS_TRAITANTS, denomination } from '@/lib/legal';
 import { CONSERVATION_JOURS } from '@/lib/stockage';
 
 export const metadata: Metadata = { title: 'Politique de confidentialité — Protranslayte' };
@@ -18,7 +18,7 @@ export default function Confidentialite() {
     >
       <h2>Responsable du traitement</h2>
       <p>
-        <Champ v={e.raisonSociale} />, <Champ v={e.adresse.join(', ')} />. Pour toute question
+        <Champ v={denomination()} />, <Champ v={e.adresse.join(', ')} />. Pour toute question
         relative à vos données : <a href={`mailto:${e.email}`}>{e.email}</a>.
       </p>
 

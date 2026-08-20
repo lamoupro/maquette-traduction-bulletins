@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import PageLegale, { Champ } from '@/components/PageLegale';
+import PageLegale from '@/components/PageLegale';
 import { ENTREPRISE } from '@/lib/legal';
 
 export const metadata: Metadata = { title: 'Contact — Protranslayte' };
@@ -22,22 +22,6 @@ export default function Contact() {
             C&apos;est le moyen le plus rapide. Réponse sous un jour ouvré. Si votre message
             concerne une commande, indiquez sa référence — elle figure dans votre courrier de
             confirmation, sous la forme <span className="tabular">PT-000000-XXXX</span>.
-          </p>
-        </div>
-
-        {/* Pas de téléphone ici : le support se fait par écrit, pour garder une
-            trace du dossier et de la référence. Le numéro reste publié dans les
-            mentions légales, où la loi l'exige. */}
-        <div className="legal-carte">
-          <h2>Par voie postale</h2>
-          <p>
-            <Champ v={e.raisonSociale} />
-            <br />
-            {e.adresse.map((l, i) => (
-              <span key={i} style={{ display: 'block' }}>
-                <Champ v={l} />
-              </span>
-            ))}
           </p>
         </div>
       </div>

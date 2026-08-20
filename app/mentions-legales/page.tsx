@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import PageLegale, { Champ } from '@/components/PageLegale';
-import { ENTREPRISE, SOUS_TRAITANTS, siren, siretLisible } from '@/lib/legal';
+import { ENTREPRISE, SOUS_TRAITANTS, denomination, siren, siretLisible } from '@/lib/legal';
 
 export const metadata: Metadata = { title: 'Mentions légales — Protranslayte' };
 
@@ -20,7 +20,7 @@ export default function MentionsLegales() {
       <dl className="legal-dl">
         <dt>Éditeur</dt>
         <dd>
-          <Champ v={e.raisonSociale} />
+          <Champ v={denomination()} />
         </dd>
 
         <dt>Enseigne commerciale</dt>

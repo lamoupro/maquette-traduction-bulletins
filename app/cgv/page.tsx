@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import PageLegale, { Champ } from '@/components/PageLegale';
-import { ENTREPRISE } from '@/lib/legal';
+import { ENTREPRISE, denomination } from '@/lib/legal';
 import { MAX_DOCS, MAX_PAGES, PRIX_ENVOI, PRIX_OFFRE } from '@/lib/data';
 import { CONSERVATION_JOURS } from '@/lib/stockage';
 
@@ -16,7 +16,7 @@ export default function CGV() {
     >
       <h2>Article 1 — Identité du vendeur</h2>
       <p>
-        Le service est édité et exploité par <Champ v={e.raisonSociale} />,{' '}
+        Le service est édité et exploité par <Champ v={denomination()} />,{' '}
         <Champ v={e.formeJuridique} />, dont le siège est situé{' '}
         <Champ v={e.adresse.join(', ')} />, joignable à{' '}
         <a href={`mailto:${e.email}`}>{e.email}</a> et au <Champ v={e.telephone} />. Les mentions

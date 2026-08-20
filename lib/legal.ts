@@ -22,11 +22,14 @@ export const ENTREPRISE = {
      site à une personne identifiable. */
   raisonSociale: 'Martin Lamou',
 
-  /* Nom d'usage déclaré au répertoire SIRENE. VOLONTAIREMENT NON AFFICHÉ :
-     pour un entrepreneur individuel, seule la dénomination — le nom de la
-     personne — est obligatoire. Faire figurer « Mouvement Précis de
-     Performance » sur un site de traduction sème le doute sans rien
-     apporter. Conservé ici pour mémoire. */
+  /* Nom d'usage déclaré au répertoire SIRENE. AFFICHÉ depuis le 20 août 2026,
+     en tête de la dénomination, à la demande de Martin : l'adresse du siège
+     est un domicile privé, et la rattacher au nom d'usage plutôt qu'au seul
+     nom de la personne rend la mention moins personnelle.
+
+     Il vient s'AJOUTER au nom de la personne, jamais s'y substituer : pour un
+     entrepreneur individuel, l'article 6-III-1° de la LCEN impose de publier
+     « les nom et prénoms ». Voir denomination() plus bas. */
   nomDeclare: 'Mouvement Précis de Performance',
 
   /* « SASU », « SARL », « EURL », « Entrepreneur individuel »… */
@@ -126,6 +129,21 @@ export const SOUS_TRAITANTS = [
     adresse: '2 rue Kellermann, 59100 Roubaix, France',
   },
 ];
+
+/** Dénomination affichée sur les pages légales.
+
+    Le nom d'usage déclaré au répertoire SIRENE passe en tête, le nom de la
+    personne suit. Les deux, et dans cet ordre : l'article 6-III-1° de la LCEN
+    impose de publier « les nom et prénoms » de l'éditeur lorsque c'est une
+    personne physique, ce qu'est un entrepreneur individuel. Le nom d'usage
+    peut s'y ajouter, il ne peut pas le remplacer — le retirer rendrait
+    l'éditeur non identifiable et les mentions légales irrégulières. */
+export function denomination() {
+  const e = ENTREPRISE;
+  if (!e.nomDeclare || e.nomDeclare === A_REMPLIR) return e.raisonSociale;
+  if (!e.raisonSociale || e.raisonSociale === A_REMPLIR) return e.nomDeclare;
+  return `${e.nomDeclare} — ${e.raisonSociale}`;
+}
 
 /** Vrai lorsque toutes les mentions obligatoires sont renseignées. */
 export function legalComplet() {
