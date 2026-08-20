@@ -13,7 +13,13 @@ const CLE_REFUS = 'protranslayte:achats-refuses';
    mémoire et repart à zéro à chaque arrivée sur le site. Un visiteur qui
    revient trois jours plus tard les revoit — c'est le comportement voulu. */
 const MAX_VUES = 2;
-const PREMIER = 4000;
+/* Quinze secondes avant la première : à quatre, elle tombait pendant que le
+   visiteur lisait encore le titre, et interrompait la première impression au
+   lieu de l'accompagner. Passé quinze secondes, celui qui est resté fait
+   défiler la page — il est engagé, et la preuve sociale renforce une intention
+   déjà en train de se former. Ceux qui repartent avant ne la voient jamais,
+   ce qui est le comportement voulu. */
+const PREMIER = 15000;
 const INTERVALLE = 30000;
 const DUREE = 6500;
 
