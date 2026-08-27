@@ -318,15 +318,57 @@ export default async function Admin({
               </p>
             )}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-              {(f.cles ?? []).map((c) => (
-                <a
-                  key={c}
-                  href={`/admin/fichier?cle=${encodeURIComponent(c)}`}
-                  style={{ fontSize: '0.85rem', color: 'var(--brass)', fontWeight: 600 }}
-                >
-                  ↓ {c.split('/').pop()}
-                </a>
-              ))}
+              {(f.cles ?? []).map((c) => {
+                const nom = c.split('/').pop() ?? 'document';
+                const adresse = `/admin/fichier?cle=${encodeURIComponent(c)}`;
+                return (
+                  <span
+                    key={c}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}
+                  >
+                    {/* Le nom ouvre la pièce pour un coup d'œil, la flèche
+                        l'enregistre. Deux gestes distincts : consulter n'est
+                        pas archiver. */}
+                    <a
+                      href={adresse}
+                      style={{ fontSize: '0.85rem', color: 'var(--brass)', fontWeight: 600 }}
+                    >
+                      {nom}
+                    </a>
+                    <a
+                      href={`${adresse}&dl=1`}
+                      title={`Télécharger ${nom}`}
+                      aria-label={`Télécharger ${nom}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 26,
+                        height: 26,
+                        borderRadius: 5,
+                        border: '1px solid var(--rule)',
+                        color: 'var(--brass)',
+                      }}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 11 5 5 5-5" />
+                        <path d="M4 20h16" />
+                      </svg>
+                    </a>
+                  </span>
+                );
+              })}
             </div>
           </article>
         ))}

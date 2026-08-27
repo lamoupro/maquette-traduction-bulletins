@@ -74,10 +74,27 @@ export async function ecrireFiche(reference: string, fiche: unknown) {
 }
 
 /** Lien de téléchargement temporaire. Une heure suffit largement. */
-export function lienTemporaire(cle: string, secondes = 3600) {
-  return getSignedUrl(client(), new GetObjectCommand({ Bucket: bucket(), Key: cle }), {
-    expiresIn: secondes,
-  });
+/* Un nom de fichier accentué ne peut pas voyager tel quel dans un en-tête
+   HTTP. On donne donc une version ASCII en repli, pour les vieux clients, et
+   la version complète encodée que tous les navigateurs actuels préfèrent. */
+function dispositionAttachement(nom: string) {
+  const repli = nom.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '');
+  return `attachment; filename="${repli}"; filename*=UTF-8''${encodeURIComponent(nom)}`;
+}
+
+/* Sans « telecharger », R2 renvoie le document avec son type MIME et le
+   navigateur l'affiche — pratique pour vérifier une pièce d'un coup d'œil.
+   Avec, il force l'enregistrement sur l'appareil. */
+export function lienTemporaire(cle: string, secondes = 3600, telecharger?: string) {
+  return getSignedUrl(
+    client(),
+    new GetObjectCommand({
+      Bucket: bucket(),
+      Key: cle,
+      ...(telecharger ? { ResponseContentDisposition: dispositionAttachement(telecharger) } : {}),
+    }),
+    { expiresIn: secondes },
+  );
 }
 
 export async function listerCommandes() {

@@ -18,8 +18,13 @@ export async function GET(requete: Request) {
     return NextResponse.json({ erreur: 'Clé invalide.' }, { status: 400 });
   }
 
+  // ?dl=1 force l'enregistrement ; sans ce paramètre, le document s'ouvre
+  // dans le navigateur, ce qui reste le geste le plus rapide pour vérifier.
+  const telecharger = new URL(requete.url).searchParams.get('dl') === '1';
+  const nom = cle.split('/').pop() || 'document';
+
   try {
-    return NextResponse.redirect(await lienTemporaire(cle));
+    return NextResponse.redirect(await lienTemporaire(cle, 3600, telecharger ? nom : undefined));
   } catch {
     return NextResponse.json({ erreur: 'Fichier introuvable.' }, { status: 404 });
   }
