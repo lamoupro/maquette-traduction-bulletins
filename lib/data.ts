@@ -64,4 +64,4 @@ export const MAX_DOCS = 40;
    autour de vingt pages ; au-delà de soixante, mieux vaut un échange par
    e-mail qu'un dépôt automatique. */
 export const MAX_PAGES = 60;
-export const FIN_OFFRE = new Date(2026, 7, 31, 23, 59, 59);
+export const FIN_OFFRE = new Date(2026, 8, 30, 23, 59, 59);

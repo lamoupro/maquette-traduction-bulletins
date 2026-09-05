@@ -5,7 +5,6 @@ import CarteCommande from '@/components/CarteCommande';
 import Comparateur from '@/components/Comparateur';
 import DonneesStructurees from '@/components/DonneesStructurees';
 import Logo from '@/components/Logo';
-import NotificationAchat from '@/components/NotificationAchat';
 import { AVIS } from '@/lib/data';
 
 const Coche = () => (
@@ -297,11 +296,10 @@ export default function Page() {
         </section>
       </main>
 
-      {/* Remises en ligne le 16 août 2026, à titre temporaire, plafonnées à
-          deux apparitions par visiteur (voir NotificationAchat). À rebrancher
-          sur les vraies commandes ou retirer une fois l'intégration avec les
-          agences partenaires terminée. */}
-      <NotificationAchat />
+      {/* Les notifications d'achat ont été retirées le 5 septembre 2026 : elles
+          tiraient dans un tableau de 200 acheteurs inventés. Le composant
+          `NotificationAchat` et le tableau `ACHETEURS` restent dans le dépôt,
+          débranchés — à ne remonter que sur de vraies commandes. */}
 
       <footer className="site">
         <div className="wrap">

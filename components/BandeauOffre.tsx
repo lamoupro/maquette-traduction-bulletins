@@ -47,7 +47,7 @@ export default function BandeauOffre() {
     <div className="promo-bar">
       <div className="wrap">
         <span>
-          <strong>Offre d&apos;août</strong> — <s>35 €</s> <strong>25 €</strong> le document
+          <strong>Offre de septembre</strong> — <s>35 €</s> <strong>25 €</strong> le document
         </span>
         <span className="pb-timer">{reste}</span>
       </div>
