@@ -54,7 +54,7 @@ export async function GET() {
     try {
       const f = await lireFiche(o.cle);
       // Seules les commandes payées et venues d'une annonce nous intéressent.
-      if (f.statut !== 'payee' || !f.clic) continue;
+      if ((f.statut !== 'payee' && f.statut !== 'livree') || !f.clic) continue;
       const montant = f.stripe?.montantEncaisse ?? f.montant ?? 0;
       lignes.push(
         [

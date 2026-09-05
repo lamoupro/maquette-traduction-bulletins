@@ -44,8 +44,8 @@ export async function preparer(c: Coordonnees) {
     return { refus: { erreur: 'Dossier introuvable. Redéposez vos documents.', statut: 404 } as Refus };
   }
 
-  // Un dossier déjà payé ne doit jamais repartir en paiement.
-  if (depot.statut === 'payee') {
+  // Un dossier déjà payé — ou déjà livré — ne doit jamais repartir en paiement.
+  if (depot.statut === 'payee' || depot.statut === 'livree') {
     return { refus: { erreur: 'Cette commande est déjà réglée.', statut: 409 } as Refus };
   }
 

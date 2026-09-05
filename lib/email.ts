@@ -173,3 +173,104 @@ export async function envoyerEmails(c: Commande, nbFichiers: number) {
     interne: resultats[1].status === 'fulfilled' && !resultats[1].value.error,
   };
 }
+
+/* ---------- Livraison de la traduction terminée ----------
+
+   Les traductions partent en pièce jointe, contrairement à la notification
+   interne. Ce sont les documents du client lui-même, adressés à lui seul, et
+   sans compte sur le site il n'existe aucun autre chemin pour les lui remettre.
+
+   Le message rappelle la date de suppression en clair : les fichiers ne sont
+   conservés que le temps annoncé dans les CGV, et un client qui ne les a pas
+   enregistrés n'a plus aucun recours passé ce délai. */
+
+/** Limite prudente : Resend refuse au-delà d'une quarantaine de méga-octets. */
+const PIECES_JOINTES_MAX = 20 * 1024 * 1024;
+
+function messageLivraison(c: Commande, jusquAu: Date, jointes: boolean) {
+  const date = jusquAu.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const corps =
+    ligne(`Bonjour ${echapper(c.client.prenom)},`) +
+    ligne(
+      jointes
+        ? `Votre traduction certifiée est terminée. Vous la trouverez en pièce jointe de ce message.`
+        : `Votre traduction certifiée est terminée. Elle vous parvient dans un message séparé, son poids dépassant la limite d'envoi.`,
+    ) +
+    `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0;border-top:1px dashed #DDE4EE;border-bottom:1px dashed #DDE4EE;">
+       <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">Référence</td>
+           <td style="padding:12px 0;font-size:0.9rem;text-align:right;font-weight:700;">${echapper(c.reference)}</td></tr>
+       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Traduit</td>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.pages} page${c.pages > 1 ? 's' : ''} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
+     </table>` +
+    `<p style="margin:0 0 10px;padding:12px 14px;background:#FBF2E2;border-left:3px solid #8A5A00;border-radius:0 6px 6px 0;font-size:0.94rem;line-height:1.55;">
+       <strong>Enregistrez vos fichiers dès maintenant.</strong><br>
+       Vos documents — originaux comme traductions — sont conservés chez nous
+       jusqu'au <strong>${date}</strong>, puis supprimés définitivement. Passé
+       cette date, nous ne pourrons plus vous les renvoyer.
+     </p>` +
+    ligne(
+      `La traduction est accompagnée d'un <em>certificate of translation accuracy</em>, le format attendu par les universités américaines.`,
+    ) +
+    (c.envoiPostal
+      ? ligne(
+          `L'exemplaire papier part par courrier suivi dans les 48 h. Vous n'avez pas à l'attendre pour utiliser la version numérique.`,
+        )
+      : '') +
+    ligne(
+      `<span style="color:#55647C;font-size:0.86rem;">Une question ? Répondez à ce message en rappelant votre référence.</span>`,
+    );
+
+  return {
+    subject: `Votre traduction ${c.reference} est prête`,
+    html: gabarit('Votre traduction est prête', corps),
+  };
+}
+
+/**
+ * Livre les traductions au client.
+ *
+ * Renvoie l'état de l'envoi plutôt que de lever : un e-mail perdu se rattrape
+ * à la main, alors qu'une exception ici ferait échouer une livraison dont les
+ * fichiers sont déjà déposés.
+ */
+export async function envoyerLivraison(
+  c: Commande,
+  pieces: { nom: string; contenu: Buffer }[],
+  jusquAu: Date,
+) {
+  if (!emailConfigure()) {
+    console.warn('[email] RESEND_API_KEY absente, livraison non notifiée');
+    return { envoye: false, jointes: false, motif: 'configuration' as const };
+  }
+
+  const poids = pieces.reduce((n, p) => n + p.contenu.length, 0);
+  const jointes = poids > 0 && poids <= PIECES_JOINTES_MAX;
+  if (poids > PIECES_JOINTES_MAX) {
+    console.warn(`[email] ${c.reference} : ${Math.round(poids / 1e6)} Mo, trop lourd pour l'envoi`);
+  }
+
+  try {
+    const r = await new Resend(process.env.RESEND_API_KEY).emails.send({
+      from: EXPEDITEUR,
+      to: c.client.email,
+      replyTo: INTERNE[0],
+      ...messageLivraison(c, jusquAu, jointes),
+      ...(jointes
+        ? { attachments: pieces.map((p) => ({ filename: p.nom, content: p.contenu })) }
+        : {}),
+    });
+    if (r.error) {
+      console.error('[email] refus livraison', r.error);
+      return { envoye: false, jointes, motif: 'refus' as const };
+    }
+    return { envoye: true, jointes, motif: null };
+  } catch (e) {
+    console.error('[email] échec livraison', e);
+    return { envoye: false, jointes, motif: 'echec' as const };
+  }
+}

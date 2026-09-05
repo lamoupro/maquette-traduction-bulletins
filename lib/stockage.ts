@@ -108,6 +108,12 @@ export async function listerCommandes() {
   }));
 }
 
+/** Contenu brut d'un objet. Sert à réunir les pièces d'une commande en archive. */
+export async function lireOctets(cle: string) {
+  const r = await client().send(new GetObjectCommand({ Bucket: bucket(), Key: cle }));
+  return Buffer.from(await r.Body!.transformToByteArray());
+}
+
 export async function lireFiche(cle: string) {
   const r = await client().send(new GetObjectCommand({ Bucket: bucket(), Key: cle }));
   return JSON.parse(await r.Body!.transformToString('utf8'));

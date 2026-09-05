@@ -42,7 +42,7 @@ async function traiter(reference: string, enc: Encaissement) {
 
   // Stripe réémet ses notifications en cas de doute. Sans cette garde, le
   // client recevrait plusieurs fois le même e-mail de confirmation.
-  if (commande.statut === 'payee') {
+  if (commande.statut === 'payee' || commande.statut === 'livree') {
     console.log(`[webhook] ${reference} déjà traitée, ignorée`);
     return;
   }

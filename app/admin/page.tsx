@@ -8,6 +8,7 @@ import {
   stockageConfigure,
 } from '@/lib/stockage';
 import { COOKIE, authConfiguree, egal, empreinte, estConnecte } from '@/lib/auth';
+import LivraisonDossier from '@/components/LivraisonDossier';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { robots: { index: false, follow: false } };
@@ -21,7 +22,9 @@ type Fiche = {
   clic?: string | null;
   fichiers?: { nom: string; pages?: number }[];
   montant: number;
-  statut?: 'en_attente_paiement' | 'payee';
+  statut?: 'en_attente_paiement' | 'payee' | 'livree';
+  livreLe?: string;
+  traductions?: { nom: string; cle: string }[];
   payeLe?: string;
   envoiPostal?: boolean;
   adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
@@ -210,7 +213,7 @@ export default async function Admin({
       {/* Export des ventes venues d'une annonce, à déposer dans Google Ads.
           C'est ce qui remplace la balise de suivi : aucun cookie chez le
           visiteur, donc aucune bannière de consentement à afficher. */}
-      {fiches.some((f) => f.statut === 'payee' && f.clic) && (
+      {fiches.some((f) => (f.statut === 'payee' || f.statut === 'livree') && f.clic) && (
         <p style={{ marginTop: 4 }}>
           <a
             href="/admin/conversions"
@@ -257,11 +260,21 @@ export default async function Admin({
                     textTransform: 'uppercase',
                     padding: '2px 8px',
                     borderRadius: 4,
-                    background: f.statut === 'payee' ? 'var(--verified-tint)' : '#FDE8E8',
-                    color: f.statut === 'payee' ? 'var(--verified)' : '#A32020',
+                    background:
+                      f.statut === 'livree'
+                        ? 'var(--brass-tint)'
+                        : f.statut === 'payee'
+                          ? 'var(--verified-tint)'
+                          : '#FDE8E8',
+                    color:
+                      f.statut === 'livree'
+                        ? 'var(--brass)'
+                        : f.statut === 'payee'
+                          ? 'var(--verified)'
+                          : '#A32020',
                   }}
                 >
-                  {f.statut === 'payee' ? 'Payée' : 'Non payée'}
+                  {f.statut === 'livree' ? 'Livrée' : f.statut === 'payee' ? 'Payée' : 'Non payée'}
                 </span>
               </span>
               <span style={{ color: 'var(--ink-soft)', fontSize: '0.82rem' }}>
@@ -370,6 +383,8 @@ export default async function Admin({
                 );
               })}
             </div>
+
+            <LivraisonDossier reference={f.reference} livree={f.statut === 'livree'} />
           </article>
         ))}
       </div>
