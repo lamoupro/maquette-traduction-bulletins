@@ -9,6 +9,7 @@ import {
 } from '@/lib/stockage';
 import { reference, referenceValide, refusFichiers } from '@/lib/commande';
 import { compterPages } from '@/lib/pages';
+import { reconnaitre, refusDeType } from '@/lib/signature';
 import { MAX_PAGES } from '@/lib/data';
 
 export const runtime = 'nodejs';
@@ -49,10 +50,21 @@ export async function POST(requete: Request) {
      fichiers qu'on va refuser. Un PDF illisible est rejeté nommément plutôt
      que compté pour une page — sinon un document de vingt pages passerait à
      25 €, et l'erreur ne se verrait qu'à la livraison. */
-  const contenus: { fichier: File; octets: Buffer; pages: number }[] = [];
+  const contenus: { fichier: File; octets: Buffer; pages: number; mime: string }[] = [];
   for (const f of fichiers) {
     const octets = Buffer.from(await f.arrayBuffer());
-    const pages = await compterPages(octets, f.type);
+
+    /* Le type réel, lu dans les octets déjà en mémoire : aucune lecture
+       supplémentaire, le coût ne dépend pas de la taille du fichier. Le type
+       annoncé par le navigateur ne sert plus que de premier tri dans
+       refusFichiers ; à partir d'ici, c'est celui-ci qui fait foi — y compris
+       pour compter les pages et pour l'étiquette posée sur le stockage. */
+    const reel = reconnaitre(octets);
+    if (!reel) {
+      return NextResponse.json({ erreur: refusDeType(f.name) }, { status: 400 });
+    }
+
+    const pages = await compterPages(octets, reel.mime);
     if (pages === null) {
       return NextResponse.json(
         {
@@ -61,7 +73,7 @@ export async function POST(requete: Request) {
         { status: 400 },
       );
     }
-    contenus.push({ fichier: f, octets, pages });
+    contenus.push({ fichier: f, octets, pages, mime: reel.mime });
   }
 
   const total = contenus.reduce((n, c) => n + c.pages, 0);
@@ -99,7 +111,7 @@ export async function POST(requete: Request) {
     const cles: string[] = [];
     for (const [i, c] of contenus.entries()) {
       const cle = `commandes/${ref}/${String(i + 1).padStart(2, '0')}-${nomSur(c.fichier.name)}`;
-      await deposer(cle, c.octets, c.fichier.type);
+      await deposer(cle, c.octets, c.mime);
       cles.push(cle);
     }
 
@@ -117,7 +129,7 @@ export async function POST(requete: Request) {
       fichiers: contenus.map((c) => ({
         nom: c.fichier.name,
         taille: c.fichier.size,
-        type: c.fichier.type,
+        type: c.mime,
         pages: c.pages,
       })),
       cles,
