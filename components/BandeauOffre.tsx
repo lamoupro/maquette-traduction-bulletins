@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { FIN_OFFRE } from '@/lib/data';
+import type { Tunnel } from '@/lib/traductions';
 
 /* 35 € est le tarif réellement pratiqué auparavant : le prix barré est donc un
    prix de référence légitime au sens de la directive Omnibus. Le compte à
    rebours vise une fin réelle et ne se réinitialise pas. */
-export default function BandeauOffre() {
+export default function BandeauOffre({ t }: { t: Tunnel }) {
   const [reste, setReste] = useState<string | null>(null);
   const [ferme, setFerme] = useState(false);
 
@@ -47,14 +48,14 @@ export default function BandeauOffre() {
     <div className="promo-bar">
       <div className="wrap">
         <span>
-          <strong>Offre de septembre</strong> — <s>35 €</s> <strong>25 €</strong> le document
+          <strong>{t.offre}</strong> — <s>35 €</s> <strong>25 €</strong> le document
         </span>
         <span className="pb-timer">{reste}</span>
       </div>
       <button
         className="pb-x"
         type="button"
-        aria-label="Masquer cette annonce"
+        aria-label={t.masquer}
         onClick={() => {
           setFerme(true);
           try {

@@ -1,0 +1,497 @@
+/* Portail institutionnel. Volontairement à part du site marchand : le public
+   n'est pas le même, la langue non plus, et un dossier d'admission n'a rien à
+   gagner à ressembler à une page de vente. Sobre, dense, lisible. */
+
+.pt {
+  --pt-ground: #F2F5F9;
+  --pt-surface: #FFFFFF;
+  --pt-sunk: #F7F9FC;
+  --pt-ink: #10233C;
+  --pt-soft: #55647C;
+  --pt-faint: #8A99AE;
+  --pt-rule: #DDE4EE;
+  --pt-accent: #1359B8;
+  --pt-accent-tint: #E8F0FC;
+  --pt-ok: #0E7A54;
+  --pt-ok-tint: #E4F2EC;
+  --pt-wait: #8A5A00;
+  --pt-wait-tint: #FBF2E2;
+  --pt-miss: #A32020;
+  --pt-miss-tint: #FBEBEA;
+
+  background: var(--pt-ground);
+  color: var(--pt-ink);
+  min-height: 100vh;
+  font-size: 15px;
+}
+.pt * { box-sizing: border-box; }
+
+/* ---------- Habillage de l'établissement ----------
+
+   La démonstration s'ouvre dans NOS couleurs, puis bascule dans celles de
+   l'établissement : c'est l'argument montré plutôt que raconté — « voici votre
+   portail, à vos couleurs ».
+
+   Couleurs officielles de Towson University, relevées dans leur charte de
+   marque (six teintes de référence) et non devinées :
+     Gold #FFBB00 · Old Gold #CC9900 · Black #151500
+     Graphite #3C3C3C · Glen Mist #DDDDDD · White #FFFFFF
+
+   Leur site emploie un or légèrement différent (#FFC00E) pour ses filets ; la
+   charte fait foi.
+
+   Les variables ne s'animent pas, mais les propriétés qui les lisent, si :
+   la transition porte donc sur background-color, color et border-color. */
+.pt.est-etablissement {
+  --pt-ecole-noir: #151500;
+  /* L'or présent dans leur logo et sur leur site en production. La charte de
+     marque donne #FFBB00 ; on retient celui de l'artwork, sans quoi le logo
+     doré et le filet voisin afficheraient deux jaunes légèrement différents,
+     ce qui se lit comme un défaut. Le CC9900 des liens reste le « Old Gold »
+     de la charte : le vif est illisible sur fond clair. */
+  --pt-ecole-or: #FFC00E;
+  --pt-ecole-or-sombre: #CC9900;
+
+
+  --pt-accent: #CC9900;
+  --pt-accent-tint: #FFF6DC;
+  --pt-ground: #F6F5F1;
+  --pt-sunk: #FAF9F5;
+  --pt-ink: #151500;
+  --pt-soft: #3C3C3C;
+  --pt-faint: #8A8578;
+  --pt-rule: #DDDDDD;
+}
+
+.pt,
+.pt .pt-tete,
+.pt .pt-liste,
+.pt .pt-liste-tete,
+.pt .pt-ligne,
+.pt .pt-doc,
+.pt .pt-volet,
+.pt .pt-sortie,
+.pt .pt-bouton,
+.pt .pt-jauge-part,
+.pt .pt-marque,
+.pt .pt-ecole,
+.pt .pt-cat,
+.pt .pt-titre h1 {
+  transition:
+    background-color 0.85s ease,
+    color 0.85s ease,
+    border-color 0.85s ease;
+}
+
+/* L'en-tête RESTE CLAIR.
+
+   Une version antérieure le passait au noir, logo en blanc. C'était une
+   erreur : leur logo est un T noir et un U or, dessiné pour un fond clair.
+   Le renverser donnait un logo qui n'est pas le leur — le défaut se voit au
+   premier coup d'œil de quelqu'un qui connaît sa propre marque.
+
+   Ce qui bascule, ce sont donc l'accent et le filet, pas le fond. */
+.pt.est-etablissement .pt-tete {
+  background: var(--pt-surface);
+  border-bottom: 3px solid var(--pt-ecole-or);
+}
+
+.pt.est-etablissement .pt-marque b { color: var(--pt-accent); }
+
+/* Le logo de l'établissement, révélé une fois la bascule faite. */
+.pt-logo-ecole {
+  height: 34px; width: auto; display: block;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.7s ease 0.25s, transform 0.7s ease 0.25s;
+}
+.pt.est-etablissement .pt-logo-ecole { opacity: 1; transform: none; }
+
+/* Le cartouche : notre marque, un × , celui de l'établissement.
+
+   Notre nom ne s'efface pas — il prend leur or. Une version antérieure le
+   faisait disparaître pour laisser la place au logo ; l'effet racontait la
+   mauvaise chose. Les deux marques restent, dans la même teinte : « votre
+   portail, tenu par nous ». */
+.pt-cartouche { display: flex; align-items: center; gap: 11px; }
+.pt-notre-marque {
+  font-weight: 800; font-size: 1.16rem; letter-spacing: -0.03em;
+  white-space: nowrap; color: var(--pt-ink);
+  transition: color 0.85s ease;
+}
+.pt-notre-marque .bleu { color: var(--pt-accent); transition: color 0.85s ease; }
+/* Deux tons, comme chez nous — « pro » sur la teinte neutre, « translayte »
+   sur l'accent — mais dans leur palette : leur noir et leur or, exactement les
+   deux couleurs de leur logo posé à côté. */
+.pt.est-etablissement .pt-notre-marque { color: var(--pt-ecole-noir); }
+.pt.est-etablissement .pt-notre-marque .bleu { color: var(--pt-ecole-or); }
+
+.pt-croix {
+  font-size: 1.02rem; line-height: 1; opacity: 0;
+  transition: opacity 0.6s ease 0.15s, color 0.85s ease;
+}
+.pt.est-etablissement .pt-croix { opacity: 0.4; color: var(--pt-ecole-noir); }
+
+.pt-rejouer {
+  background: none; border: 1px solid #33455D; color: #C8D6E8;
+  font: inherit; font-size: 0.72rem; padding: 3px 10px; border-radius: 4px;
+  cursor: pointer;
+}
+.pt-rejouer:hover { background: #33455D; color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pt, .pt *, .pt-logo-ecole, .pt-notre-marque { transition: none !important; }
+}
+
+.pt-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- bandeau de démonstration ---------- */
+.pt-demo {
+  background: #1B2A3E;
+  color: #C8D6E8;
+  font-size: 0.78rem;
+  padding: 7px 0;
+}
+.pt-demo .pt-wrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pt-demo strong { color: #fff; letter-spacing: 0.02em; }
+.pt-demo-vues { margin-left: auto; display: flex; gap: 6px; }
+.pt-demo-vues a {
+  color: #C8D6E8; text-decoration: none; padding: 3px 10px; border-radius: 4px;
+  border: 1px solid #33455D; font-size: 0.75rem;
+}
+.pt-demo-vues a[aria-current='true'] { background: #33455D; color: #fff; }
+
+/* ---------- en-tête ---------- */
+.pt-tete { background: var(--pt-surface); border-bottom: 1px solid var(--pt-rule); }
+.pt-tete .pt-wrap {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding-top: 16px; padding-bottom: 16px;
+}
+.pt-ecole span {
+  display: block; font-size: 0.78rem; color: var(--pt-soft);
+  padding-left: 14px; border-left: 1px solid var(--pt-rule);
+}
+.pt-marque {
+  margin-left: auto; font-size: 0.72rem; color: var(--pt-faint);
+  text-align: right; line-height: 1.4;
+}
+.pt-marque b { color: var(--pt-accent); font-weight: 700; }
+
+/* ---------- titres ---------- */
+.pt-titre { padding: 28px 0 4px; }
+.pt-titre h1 { font-size: 1.42rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.pt-titre p { margin: 5px 0 0; color: var(--pt-soft); font-size: 0.9rem; max-width: 60ch; }
+
+/* ---------- liste des candidats ----------
+
+   Pas un <table>. Chaque ligne est UN lien, et rien d'autre : c'est la seule
+   façon d'avoir une rangée entièrement cliquable sans bricolage.
+
+   La première version était un tableau dont seul le texte du nom était
+   cliquable. Étendre la zone avec un pseudo-élément absolu ancré sur le <tr>
+   ne marche pas : un <tr> n'est pas un bloc conteneur fiable, l'élément se
+   posait ailleurs. Un utilisateur vise la rangée, jamais le mot — et un clic
+   qui ne fait rien passe pour une panne, pas pour une imprécision.
+
+   L'alignement des colonnes vient d'un gabarit de grille partagé entre
+   l'en-tête et les rangées. */
+.pt-liste {
+  --pt-cols: minmax(180px, 1.6fr) minmax(110px, 1fr) minmax(120px, 1fr)
+             minmax(90px, 0.8fr) minmax(140px, 1fr) minmax(150px, 1fr);
+  margin: 18px 0 30px; background: var(--pt-surface);
+  border: 1px solid var(--pt-rule); border-radius: 8px; overflow: hidden;
+}
+.pt-liste-tete, .pt-ligne {
+  display: grid; grid-template-columns: var(--pt-cols);
+  gap: 16px; align-items: center; padding: 13px 18px;
+}
+.pt-liste-tete {
+  background: var(--pt-sunk); border-bottom: 1px solid var(--pt-rule);
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--pt-faint);
+}
+.pt-ligne {
+  border-bottom: 1px solid var(--pt-rule);
+  text-decoration: none; color: inherit;
+}
+.pt-ligne:last-child { border-bottom: none; }
+.pt-ligne:hover { background: var(--pt-sunk); }
+.pt-ligne:hover .pt-nom { color: var(--pt-accent); }
+.pt-ligne:focus-visible { outline: 2px solid var(--pt-accent); outline-offset: -2px; }
+.pt-nom { font-weight: 600; color: var(--pt-ink); }
+.pt-sous { display: block; font-size: 0.78rem; color: var(--pt-soft); font-weight: 400; }
+.pt-cellule { font-size: 0.87rem; min-width: 0; }
+.pt-mono {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--pt-soft);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* Sous 780 px la grille se replie : l'en-tête disparaît et chaque rangée
+   devient une fiche, chaque valeur précédée de son intitulé. Un tableau à six
+   colonnes qui défile de côté ne se lit pas sur un téléphone. */
+@media (max-width: 780px) {
+  .pt-liste-tete { display: none; }
+  .pt-ligne { grid-template-columns: 1fr; gap: 6px; padding: 15px 18px; }
+  .pt-cellule[data-lab]::before {
+    content: attr(data-lab) ' ';
+    font-size: 0.68rem; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--pt-faint); margin-right: 6px;
+  }
+}
+
+/* ---------- jauge d'avancement ---------- */
+.pt-jauge { display: flex; align-items: center; gap: 9px; min-width: 140px; }
+.pt-jauge-piste { display: block; flex: 1; height: 5px; border-radius: 3px; background: var(--pt-rule); overflow: hidden; }
+.pt-jauge-part { display: block; height: 100%; border-radius: 3px; background: var(--pt-accent); }
+.pt-jauge-part.ok { background: var(--pt-ok); }
+
+/* ---------- pastilles d'état ---------- */
+.pt-etat {
+  display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em;
+  padding: 3px 9px; border-radius: 4px; white-space: nowrap;
+}
+.pt-etat.ok { background: var(--pt-ok-tint); color: var(--pt-ok); }
+.pt-etat.attente { background: var(--pt-wait-tint); color: var(--pt-wait); }
+.pt-etat.manque { background: var(--pt-miss-tint); color: var(--pt-miss); }
+
+/* ---------- fiche d'un candidat ---------- */
+.pt-retour {
+  display: inline-block; margin: 22px 0 0; font-size: 0.84rem;
+  color: var(--pt-soft); text-decoration: none;
+}
+.pt-retour:hover { color: var(--pt-accent); }
+
+.pt-fiche-tete {
+  display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap;
+  padding: 14px 0 20px; border-bottom: 1px solid var(--pt-rule); margin-bottom: 24px;
+}
+.pt-fiche-tete h1 { font-size: 1.5rem; margin: 0; letter-spacing: -0.02em; }
+.pt-fiche-meta { margin: 6px 0 0; color: var(--pt-soft); font-size: 0.88rem; }
+.pt-fiche-actions { margin-left: auto; display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+
+.pt-bouton {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+  border-radius: 6px; border: 1px solid var(--pt-rule); background: var(--pt-surface);
+  color: var(--pt-ink); font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; cursor: pointer; font-family: inherit;
+}
+.pt-bouton:hover { border-color: var(--pt-accent); color: var(--pt-accent); }
+.pt-bouton.primaire { background: var(--pt-accent); border-color: var(--pt-accent); color: #fff; }
+.pt-bouton.primaire:hover { background: #0E4695; color: #fff; }
+
+/* ---------- récupération du dossier ----------
+   Placé AVANT la liste des pièces : c'est ce que l'établissement vient
+   chercher, il ne doit pas avoir à faire défiler seize documents pour le
+   trouver. */
+.pt-recuperer {
+  display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+  background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;
+}
+.pt-recuperer h2 { font-size: 1rem; margin: 0 0 4px; }
+.pt-recuperer p { margin: 0; font-size: 0.86rem; color: var(--pt-soft); max-width: 46ch; }
+.pt-recuperer-boutons { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- ce qui manque ---------- */
+.pt-manquant {
+  background: var(--pt-miss-tint); border: 1px solid #F0CFCC;
+  border-radius: 8px; padding: 15px 18px; margin-bottom: 24px;
+}
+.pt-manquant h2 { font-size: 0.95rem; margin: 0 0 8px; color: var(--pt-miss); }
+.pt-manquant ul { margin: 0 0 12px; padding-left: 19px; font-size: 0.9rem; }
+.pt-manquant li { margin-bottom: 3px; }
+.pt-manquant .pt-relance { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- documents ---------- */
+.pt-cat {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--pt-faint); margin: 26px 0 9px;
+}
+.pt-cat:first-of-type { margin-top: 0; }
+
+.pt-doc {
+  background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 8px; margin-bottom: 9px; overflow: hidden;
+}
+.pt-doc-tete {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 16px;
+}
+.pt-doc-titre { font-weight: 600; font-size: 0.94rem; }
+.pt-doc-tete .pt-etat { margin-left: auto; }
+
+/* Original et traduction côte à côte : c'est la paire qui fait la valeur.
+   Un registrar compare, il ne lit pas l'un puis cherche l'autre. */
+.pt-paire {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--pt-rule); border-top: 1px solid var(--pt-rule);
+}
+.pt-volet { background: var(--pt-sunk); padding: 11px 16px; }
+.pt-volet-lab {
+  font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--pt-faint); display: block; margin-bottom: 4px;
+}
+.pt-volet a { color: var(--pt-accent); text-decoration: none; font-size: 0.87rem; font-weight: 500; }
+.pt-volet a:hover { text-decoration: underline; }
+.pt-volet .pt-detail { display: block; font-size: 0.76rem; color: var(--pt-soft); margin-top: 2px; }
+.pt-volet.vide { color: var(--pt-faint); font-size: 0.85rem; font-style: italic; }
+
+/* ---------- écran d'entrée ----------
+   Une seule carte, centrée, sans rien autour : à ce moment-là le visiteur n'a
+   qu'une décision à prendre. */
+.pt-entree {
+  min-height: 62vh; display: flex; align-items: center; justify-content: center;
+  padding: 48px 24px 80px;
+}
+.pt-carte {
+  width: 100%; max-width: 430px;
+  background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 10px; padding: 30px 32px;
+  display: flex; flex-direction: column;
+}
+.pt-carte-lab {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--pt-faint); margin-bottom: 9px;
+}
+.pt-carte h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 9px; }
+.pt-carte > p { margin: 0 0 20px; font-size: 0.92rem; color: var(--pt-soft); }
+.pt-carte-note { font-size: 0.84rem !important; color: var(--pt-soft); margin: 9px 0 20px !important; }
+.pt-carte-note strong { color: var(--pt-ink); }
+
+.pt-champ { display: block; }
+.pt-champ span {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: var(--pt-soft); margin-bottom: 6px;
+}
+.pt-champ input {
+  width: 100%; font: inherit; font-size: 0.95rem;
+  padding: 11px 13px; border-radius: 7px;
+  border: 1px solid var(--pt-rule-strong, var(--pt-rule)); background: var(--pt-sunk);
+  color: var(--pt-ink);
+}
+.pt-champ input:focus {
+  outline: none; border-color: var(--pt-accent); background: var(--pt-surface);
+  box-shadow: 0 0 0 3px var(--pt-accent-tint);
+}
+.pt-champ input[aria-invalid='true'] { border-color: var(--pt-miss); }
+
+.pt-refus {
+  font-size: 0.86rem; color: var(--pt-miss);
+  background: var(--pt-miss-tint); border-radius: 6px;
+  padding: 9px 12px; margin: 9px 0 20px;
+}
+
+.pt-large { justify-content: center; width: 100%; padding: 12px 16px; font-size: 0.92rem; }
+.pt-carte-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pt-demo-marque {
+  font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.25); border-radius: 3px;
+  padding: 1px 5px; margin-left: 7px;
+}
+.pt-carte-pied {
+  margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--pt-rule);
+  font-size: 0.78rem; color: var(--pt-faint); line-height: 1.5;
+}
+
+/* ---------- boîte d'avertissement avant téléchargement ---------- */
+.pt-voile {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(16, 22, 30, 0.5);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pt-boite {
+  background: var(--pt-surface); border-radius: 10px;
+  padding: 22px 24px; max-width: 460px; width: 100%;
+  box-shadow: 0 18px 44px rgba(16, 22, 30, 0.28);
+}
+.pt-boite h3 { margin: 0 0 8px; font-size: 1.06rem; color: var(--pt-miss); }
+.pt-boite p { margin: 0 0 12px; font-size: 0.9rem; color: var(--pt-soft); }
+.pt-manque-liste {
+  margin: 0 0 16px; padding: 11px 14px 11px 30px;
+  background: var(--pt-miss-tint); border-radius: 6px;
+  font-size: 0.9rem; color: var(--pt-miss);
+}
+.pt-manque-liste li { margin-bottom: 2px; }
+.pt-confirme {
+  background: var(--pt-ok-tint); color: var(--pt-ok) !important;
+  padding: 9px 12px; border-radius: 6px; font-weight: 600;
+}
+.pt-boite-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pt-bouton[disabled] { opacity: 0.5; cursor: default; }
+
+.pt-attente {
+  font-size: 0.85rem; color: var(--pt-soft);
+  background: var(--pt-wait-tint); border-radius: 6px;
+  padding: 10px 14px; max-width: 34ch; display: block;
+}
+
+.pt-note {
+  font-size: 0.75rem; color: var(--pt-faint); margin-right: auto;
+  align-self: center;
+}
+
+/* ---------- visionneuse dépliable ----------
+
+   Le nom du fichier est un bouton, pas un lien de téléchargement : on regarde
+   d'abord. Le document s'ouvre dans sa propre carte, et comme les deux volets
+   partagent une grille à deux colonnes, ouvrir l'original et la traduction
+   les met côte à côte sans rien déplacer. */
+.pt-fichier {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; font-size: 0.87rem; font-weight: 500;
+  color: var(--pt-accent); cursor: pointer; text-align: left;
+}
+.pt-fichier:hover { text-decoration: underline; }
+.pt-chevron {
+  font-size: 0.7rem; line-height: 1;
+  transition: transform 0.18s ease; transform-origin: center;
+}
+.pt-chevron[data-ouvert='true'] { transform: rotate(90deg); }
+
+.pt-visionneuse {
+  margin-top: 10px; border: 1px solid var(--pt-rule);
+  border-radius: 6px; overflow: hidden; background: var(--pt-surface);
+}
+.pt-visionneuse-barre {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 7px 9px; border-bottom: 1px solid var(--pt-rule);
+  background: var(--pt-sunk);
+}
+.pt-mini {
+  font: inherit; font-size: 0.75rem; font-weight: 600;
+  padding: 4px 9px; border-radius: 5px;
+  border: 1px solid var(--pt-rule); background: var(--pt-surface);
+  color: var(--pt-ink); text-decoration: none; cursor: pointer;
+}
+.pt-mini:hover { border-color: var(--pt-accent); color: var(--pt-accent); }
+
+/* Assez haut pour lire une page A4 sans lutter, assez court pour qu'une
+   deuxième pièce ouverte reste visible en défilant. */
+.pt-cadre {
+  display: block; width: 100%; height: 520px; border: none; background: #52565A;
+}
+@media (max-width: 620px) {
+  .pt-cadre { height: 380px; }
+}
+
+@media (max-width: 620px) {
+  .pt-paire { grid-template-columns: 1fr; }
+}
+
+/* ---------- export et suppression ---------- */
+.pt-sortie {
+  margin: 34px 0 60px; background: var(--pt-surface);
+  border: 1px solid var(--pt-rule); border-radius: 8px; padding: 18px 20px;
+}
+.pt-sortie h2 { font-size: 1rem; margin: 0 0 5px; }
+.pt-sortie p { margin: 0 0 13px; color: var(--pt-soft); font-size: 0.88rem; max-width: 70ch; }
+.pt-sortie .pt-boutons { display: flex; gap: 9px; flex-wrap: wrap; }
+.pt-danger { border-color: #E6BDB9; color: var(--pt-miss); }
+.pt-danger:hover { border-color: var(--pt-miss); color: var(--pt-miss); }
+
+.pt-pied {
+  border-top: 1px solid var(--pt-rule); margin-top: 40px; padding: 20px 0 46px;
+  font-size: 0.78rem; color: var(--pt-faint);
+}
+.pt-pied .pt-wrap { display: flex; gap: 16px; flex-wrap: wrap; }
+.pt-pied a { color: var(--pt-soft); text-decoration: none; }

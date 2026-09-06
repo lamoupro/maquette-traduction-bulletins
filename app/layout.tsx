@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
+import { BALISE, LANGUE_RACINE, estLangue } from '@/lib/langues';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -11,7 +13,19 @@ export const metadata: Metadata = {
   // Google Ads : le site est commercialement prêt, et le référencement
   // naturel met plusieurs semaines à s'installer.
   robots: { index: true, follow: true },
-  alternates: { canonical: 'https://protranslayte.com/' },
+  alternates: {
+    canonical: 'https://protranslayte.com/',
+    /* Chaque langue a son adresse propre, et on le DIT à Google : sans ces
+       liens, il verrait quatre pages concurrentes sur le même sujet et n'en
+       retiendrait qu'une. Avec eux, il sert la bonne selon le lecteur. */
+    languages: {
+      'x-default': 'https://protranslayte.com/',
+      fr: 'https://protranslayte.com/',
+      en: 'https://protranslayte.com/en',
+      es: 'https://protranslayte.com/es',
+      'pt-BR': 'https://protranslayte.com/pt',
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -20,9 +34,15 @@ export const viewport: Viewport = {
   themeColor: '#1359B8',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  /* La langue vient du middleware, qui la pose sur chaque requête. Le gabarit
+     racine n'a aucun autre moyen de la connaître : il est au-dessus des
+     segments d'adresse, et Next ne la lui passe pas. */
+  const entete = (await headers()).get('x-langue');
+  const langue = entete && estLangue(entete) ? entete : LANGUE_RACINE;
+
   return (
-    <html lang="fr">
+    <html lang={BALISE[langue]}>
       <body style={{ margin: 0 }}>{children}</body>
     </html>
   );

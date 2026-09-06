@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/admin/', '/api/', '/commande/'],
+      disallow: ['/admin', '/admin/', '/api/', '/commande/', '/portal', '/portal/'],
     },
     sitemap: 'https://protranslayte.com/sitemap.xml',
   };

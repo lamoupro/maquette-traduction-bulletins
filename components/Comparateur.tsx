@@ -1,5 +1,7 @@
 'use client';
 
+import type { Tunnel } from '@/lib/traductions';
+
 import { useRef, useState } from 'react';
 
 /* Comparateur avant / après, à deux documents (diplôme et bulletin).
@@ -32,46 +34,48 @@ type Document = {
   legende: React.ReactNode;
 };
 
-const DOCUMENTS: Document[] = [
+/* La liste dépend des textes, donc de la langue : c'est une fabrique, pas une
+   constante. Elle reste hors du composant pour ne pas être reconstruite à
+   chaque rendu inutilement — elle l'est une fois par changement de langue. */
+const documentsDe = (t: Tunnel): Document[] => [
   {
     cle: 'diplome',
-    onglet: 'Diplôme',
-    titre: 'Voici à quoi ressemblera votre diplôme',
+    onglet: t.ongletDiplome,
+    titre: t.apercuDiplome,
     ratio: '1400 / 991',
     fr: '/diplome_fr.webp',
     en: '/diplome_en.webp',
     largeur: 1400,
     hauteur: 991,
-    altFr: 'Diplôme du baccalauréat original en français',
-    altEn: 'Diplôme du baccalauréat traduit en anglais par un traducteur assermenté',
+    altFr: `${t.ongletDiplome} — ${t.altOriginal}`,
+    altEn: `${t.ongletDiplome} — ${t.altTraduit}`,
     legende: (
       <>
-        Traduction réelle — <b>cadre, tampon et filigrane conservés</b>, mise en page fidèle à
-        l&apos;original. Les données personnelles ont été masquées pour cet exemple.
+        <b>{t.cadreConserve}</b>, {t.legendeSuite}
       </>
     ),
   },
   {
     cle: 'bulletin',
-    onglet: 'Bulletin de notes',
-    titre: 'Voici à quoi ressemblera votre bulletin',
+    onglet: t.ongletBulletin,
+    titre: t.apercuBulletin,
     ratio: '1000 / 1417',
     fr: '/slider_fr.jpg',
     en: '/slider_en.jpg',
     largeur: 536,
     hauteur: 760,
-    altFr: 'Bulletin de notes original en français',
-    altEn: 'Bulletin de notes traduit en anglais par un traducteur assermenté',
+    altFr: `${t.ongletBulletin} — ${t.altOriginal}`,
+    altEn: `${t.ongletBulletin} — ${t.altTraduit}`,
     legende: (
       <>
-        Traduction réelle — <b>mêmes notes, mêmes appréciations</b>, mise en page fidèle à
-        l&apos;original. Les données personnelles ont été masquées pour cet exemple.
+        <b>{t.memeNotes}</b>, {t.legendeSuite}
       </>
     ),
   },
 ];
 
-export default function Comparateur() {
+export default function Comparateur({ t }: { t: Tunnel }) {
+  const DOCUMENTS = documentsDe(t);
   const refCadre = useRef<HTMLDivElement>(null);
   const refPoignee = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState(50);
@@ -102,7 +106,7 @@ export default function Comparateur() {
 
   return (
     <div className="compare-card">
-      <div className="compare-tabs" role="tablist" aria-label="Type de document">
+      <div className="compare-tabs" role="tablist" aria-label="{t.typeDocument}">
         {DOCUMENTS.map((d, i) => (
           <button
             key={d.cle}
@@ -137,7 +141,7 @@ export default function Comparateur() {
       >
         <div className="compare-head">
           <h3>{doc.titre}</h3>
-          <span>GLISSER POUR COMPARER</span>
+          <span>{t.glisser}</span>
         </div>
 
         <div
@@ -174,7 +178,7 @@ export default function Comparateur() {
               height={doc.hauteur}
               alt={doc.altEn}
             />
-            <span className="doc-tag en">Traduction assermentée</span>
+            <span className="doc-tag en">{t.traduit}</span>
           </div>
 
           <div className="doc-clip">
@@ -187,7 +191,7 @@ export default function Comparateur() {
               alt={doc.altFr}
               fetchPriority={actif === 0 ? 'high' : 'auto'}
             />
-            <span className="doc-tag fr">Original FR</span>
+            <span className="doc-tag fr">{t.original}</span>
           </div>
 
           <div className="handle">

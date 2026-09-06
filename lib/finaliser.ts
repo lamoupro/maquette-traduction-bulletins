@@ -1,5 +1,6 @@
 import { ecrireFiche, lireFiche } from './stockage';
 import { cpValide, emailValide, montantDe, referenceValide } from './commande';
+import { deviseDuPays, deviseParCode } from './devises';
 
 /* Rattache des coordonnées à un dépôt existant, et calcule le montant dû.
 
@@ -52,7 +53,19 @@ export async function preparer(c: Coordonnees) {
   /* Le nombre de pages vient du dépôt, jamais de la requête : c'est le
      serveur qui les a comptées dans les fichiers, le navigateur n'a pas
      voix au chapitre sur le prix. */
-  const { pages, montant } = montantDe(depot.pages ?? depot.fichiers?.length ?? 1, c.envoiPostal);
+  /* La devise vient du dépôt, jamais de la requête en cours : c'est le pays
+     d'où les documents ont été envoyés qui fait foi, pas celui d'où l'on paie.
+
+     On résout par le PAYS et non par le seul code : plusieurs pays partagent
+     l'euro, et un seul d'entre eux — la France — ouvre l'envoi postal. Chercher
+     « la première devise en EUR » aurait proposé à un client marocain un
+     courrier suivi qui ne dessert que la France métropolitaine. */
+  const devise = depot.pays ? deviseDuPays(depot.pays) : deviseParCode(depot.devise);
+  const { pages, montant } = montantDe(
+    depot.pages ?? depot.fichiers?.length ?? 1,
+    c.envoiPostal,
+    devise,
+  );
 
   const commande = {
     ...depot,
@@ -61,7 +74,9 @@ export async function preparer(c: Coordonnees) {
     langues: { source: c.source, cible: c.cible },
     pages,
     montant,
-    envoiPostal: c.envoiPostal,
+    devise: devise.code,
+    langue: depot.langue ?? 'fr',
+    envoiPostal: c.envoiPostal && Boolean(devise.envoi),
     adressePostale: c.envoiPostal
       ? { adresse: c.adresse, codePostal: c.codePostal, ville: c.ville }
       : null,
@@ -69,5 +84,5 @@ export async function preparer(c: Coordonnees) {
   };
 
   await ecrireFiche(c.reference, commande);
-  return { commande, pages, montant };
+  return { commande, pages, montant, devise };
 }

@@ -1,9 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { MAX_DOCS, PRIX_ENVOI, PRIX_NORMAL, PRIX_OFFRE } from '@/lib/data';
-import BoutonExpress from './BoutonExpress';
+import { MAX_DOCS, PRIX_NORMAL } from '@/lib/data';
+import { USD, montantLisible, type Devise } from '@/lib/devises';
+import type { Tunnel } from '@/lib/traductions';
+import { LANGUES_DOC, nomLangueDoc, type Langue } from '@/lib/langues';
+import { CONSERVATION_JOURS } from '@/lib/stockage';
+
+/* Chargé à part : sans cela, la bibliothèque Stripe entrait dans le paquet
+   JavaScript de la page d'accueil et retardait son affichage pour tout le
+   monde, y compris ceux qui ne commanderont jamais. */
+const BoutonExpress = dynamic(() => import('./BoutonExpress'), { ssr: false });
 import {
   ecrireBrouillon,
   ecrireEnAttente,
@@ -15,23 +24,29 @@ import {
   type EnAttente,
 } from '@/lib/memoire';
 
-const LANGUES = ['Français', 'Anglais', 'Espagnol', 'Arabe', 'Portugais', 'Italien', 'Allemand'];
 
-// Les montants ronds restent sans décimale — « 25 € », pas « 25,00 € ».
-const eur = (n: number) =>
-  `${n.toLocaleString('fr-FR', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2 })} €`;
+
+/* La devise vient du serveur, à la première réponse du dépôt. Tant qu'aucun
+   document n'est déposé, on affiche le dollar : c'est le défaut du site, et
+   c'est ce que verra la majorité des visiteurs. */
 const emailValide = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 const cpValide = (v: string) => /^\d{5}$/.test(v.trim());
 
-export default function CarteCommande() {
-  const [source, setSource] = useState('Français');
-  const [cible, setCible] = useState('Anglais');
+export default function CarteCommande({ t, langue }: { t: Tunnel; langue: Langue }) {
+  /* Codes, pas libellés : c'est le code qui part au serveur et qui est
+     enregistré. Le libellé n'existe qu'à l'écran, dans la langue du lecteur. */
+  const [source, setSource] = useState('fr');
+  const [cible, setCible] = useState('en');
   const [fichiers, setFichiers] = useState<File[]>([]);
   const [email, setEmail] = useState('');
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [remarque, setRemarque] = useState('');
   const [postal, setPostal] = useState(false);
+  /* La devise est décidée par le SERVEUR, au dépôt, d'après le pays de la
+     requête. On l'affiche telle qu'il l'a renvoyée. Tant que rien n'est déposé,
+     c'est le dollar — le défaut du site. */
+  const [devise, setDevise] = useState<Devise>(USD);
   const [adresse, setAdresse] = useState('');
   const [codePostal, setCodePostal] = useState('');
   const [ville, setVille] = useState('');
@@ -85,17 +100,18 @@ export default function CarteCommande() {
   const qte = Math.max(1, pages);
 
   const avant = qte * PRIX_NORMAL;
-  const apres = qte * PRIX_OFFRE;
+  const eur = (n: number) => montantLisible(n, devise);
+  const apres = qte * devise.page;
   // L'envoi papier est facturé une fois par commande, pas par document :
   // trois bulletins tiennent dans la même enveloppe.
-  const total = apres + (postal ? PRIX_ENVOI : 0);
+  const total = apres + (postal && devise.envoi ? devise.envoi : 0);
   const contactComplet = emailValide(email) && prenom.trim() !== '' && nom.trim() !== '';
   const adresseComplete =
     !postal || (adresse.trim() !== '' && cpValide(codePostal) && ville.trim() !== '');
   const peutPayer = fichiers.length > 0 && contactComplet && adresseComplete && !envoi;
 
   const etape = contactComplet && fichiers.length > 0 ? 3 : fichiers.length > 0 ? 2 : 1;
-  const libelleEtape = ['Déposez vos documents', 'Vos coordonnées', 'Prêt à payer'][etape - 1];
+  const libelleEtape = t.etapes[etape - 1];
 
   /* Révélation en cascade : un champ rempli en découvre un nouveau. Tout
      afficher d'un coup après le dépôt donnait un mur de formulaire, et
@@ -149,7 +165,7 @@ export default function CarteCommande() {
 
     setFichiers(complet);
     setMessage(
-      fusion.length > MAX_DOCS ? `Maximum ${MAX_DOCS} documents par commande.` : '',
+      fusion.length > MAX_DOCS ? t.maxDocuments.replace('{n}', String(MAX_DOCS)) : '',
     );
     await deposer(complet);
 
@@ -183,11 +199,15 @@ export default function CarteCommande() {
       if (refDepot) d.append('reference', refDepot);
       const clic = lireClic();
       if (clic) d.append('clic', clic);
+      /* La langue du site part avec le dépôt : c'est elle qui décidera de la
+         langue des e-mails. Une préférence d'affichage, pas un droit — rien
+         de sensible ne s'y joue, le serveur peut la croire. */
+      d.append('langue', langue);
       const r = await fetch('/api/depot', { method: 'POST', body: d });
       const json = await r.json();
       // Un dépôt plus récent a déjà répondu : on ignore celui-ci.
       if (numero !== depotNumero.current) return;
-      if (!r.ok) throw new Error(json.erreur || 'Dépôt impossible');
+      if (!r.ok) throw new Error(json.erreur || t.depotImpossible);
       setRefDepot(json.reference);
       setPages(json.pages ?? liste.length);
       setDetailPages(
@@ -199,7 +219,7 @@ export default function CarteCommande() {
       if (numero !== depotNumero.current) return;
       setRefDepot(null);
       setPages(0);
-      setMessage(e instanceof Error ? e.message : 'Le dépôt a échoué. Réessayez.');
+      setMessage(e instanceof Error ? e.message : t.erreurDepot);
       setFichiers([]);
       setDetailPages({});
     } finally {
@@ -209,12 +229,12 @@ export default function CarteCommande() {
 
   async function commander(moyen: 'carte' | 'applepay') {
     if (fichiers.length === 0) {
-      setMessage('Déposez d’abord vos documents.');
+      setMessage(t.deposezDabord);
       return;
     }
     if (!refDepot) {
       setMessage(
-        depotEnCours ? 'Vos documents finissent de se déposer…' : 'Redéposez vos documents.',
+        depotEnCours ? t.depotEnCours : t.deposezDabord,
       );
       return;
     }
@@ -240,7 +260,7 @@ export default function CarteCommande() {
       const r = await fetch('/api/commande', { method: 'POST', body: donnees });
       const json = await r.json();
       if (!r.ok) throw new Error(json.erreur || 'Envoi impossible');
-      if (!json.clientSecret) throw new Error("Le paiement n'a pas pu être initialisé.");
+      if (!json.clientSecret) throw new Error(t.erreurGenerale);
 
       /* Les documents sont chez nous : on mémorise de quoi reprendre le
          paiement, puis on quitte la page d'accueil pour une page dédiée.
@@ -259,7 +279,7 @@ export default function CarteCommande() {
       router.push(`/commande/paiement?ref=${encodeURIComponent(json.reference)}`);
     } catch (e) {
       setMessage(
-        e instanceof Error ? e.message : 'Une erreur est survenue. Réessayez dans un instant.',
+        e instanceof Error ? e.message : t.erreurGenerale,
       );
     } finally {
       setEnvoi(false);
@@ -274,7 +294,7 @@ export default function CarteCommande() {
       <div className="dossier" id="dossier" ref={refCarte}>
         <div className="dossier-top">
           <span className="eyebrow">Commande en attente</span>
-          <span className="ref tabular">DOSSIER N° {enAttente.reference}</span>
+          <span className="ref tabular">{t.dossier} {enAttente.reference}</span>
         </div>
         <p style={{ margin: 0, fontSize: '0.95rem' }}>
           {enAttente.pages} page{enAttente.pages > 1 ? 's' : ''} déposée
@@ -288,7 +308,7 @@ export default function CarteCommande() {
             router.push(`/commande/paiement?ref=${encodeURIComponent(enAttente.reference)}`)
           }
         >
-          Reprendre et payer {eur(enAttente.montant)}
+          {t.reprendre.replace('{montant}', eur(enAttente.montant))}
         </button>
         <button
           type="button"
@@ -316,8 +336,8 @@ export default function CarteCommande() {
     <>
       <div className="dossier" id="dossier" ref={refCarte}>
         <div className="dossier-top">
-          <span className="eyebrow">Devis instantané</span>
-          <span className="ref tabular">DOSSIER N° {dossier}</span>
+          <span className="eyebrow">{t.devis}</span>
+          <span className="ref tabular">{t.dossier} {dossier}</span>
         </div>
 
         <div className="etapes">
@@ -327,23 +347,25 @@ export default function CarteCommande() {
             <i className={etape >= 3 ? 'on' : ''} />
           </div>
           <p className="etapes-txt" aria-live="polite">
-            <strong>Étape {etape} sur 3</strong> · {libelleEtape}
+            <strong>{t.etape.replace('{n}', String(etape))}</strong> · {libelleEtape}
           </p>
         </div>
 
         <div className="field-row">
           <div className="field">
-            <label htmlFor="src">Langue source</label>
+            <label htmlFor="src">{t.langueSource}</label>
             <select id="src" value={source} onChange={(e) => setSource(e.target.value)}>
-              {LANGUES.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
+              {LANGUES_DOC.map((l) => (
+                  <option key={l} value={l}>
+                    {nomLangueDoc(l, langue)}
+                  </option>
+                ))}
             </select>
           </div>
           <button
             className="swap"
             type="button"
-            aria-label="Inverser les langues"
+            aria-label={t.inverser}
             onClick={() => {
               setSource(cible);
               setCible(source);
@@ -360,11 +382,13 @@ export default function CarteCommande() {
             </svg>
           </button>
           <div className="field">
-            <label htmlFor="tgt">Langue souhaitée</label>
+            <label htmlFor="tgt">{t.langueCible}</label>
             <select id="tgt" value={cible} onChange={(e) => setCible(e.target.value)}>
-              {LANGUES.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
+              {LANGUES_DOC.map((l) => (
+                  <option key={l} value={l}>
+                    {nomLangueDoc(l, langue)}
+                  </option>
+                ))}
             </select>
           </div>
         </div>
@@ -373,13 +397,13 @@ export default function CarteCommande() {
           {/* C'est ici que le visiteur vérifie s'il a le droit d'envoyer son
               diplôme. Tant que cette ligne ne le nomme pas, il ne l'envoie pas,
               quelle que soit la page d'accueil. */}
-          <span className="name">Bulletins et diplômes</span>
+          <span className="name">{t.documentsNom}</span>
           {/* Le nombre n'est plus réglable : il compte les fichiers déposés.
               Un compteur pouvant contredire la liste était une promesse de
               litige, puisque le prix est au document. */}
           <span className="qty-lecture tabular" aria-live="polite">
             {fichiers.length === 0
-              ? 'aucun document'
+              ? t.aucunDocument
               : depotEnCours
                 ? 'lecture en cours…'
                 : `${pages} page${pages > 1 ? 's' : ''}`}
@@ -388,14 +412,17 @@ export default function CarteCommande() {
 
         <div className="price-row">
           <span className="label">
-            Traduction assermentée {source} → {cible}
-            {pages > 0 ? ` · ${pages} page${pages > 1 ? 's' : ''} × ${PRIX_OFFRE} €` : ` · ${PRIX_OFFRE} € la page`}
+            {/* Les codes de langue se résolvent en libellés : depuis le passage
+                aux identifiants stables, cette ligne affichait « es → en ». */}
+            {t.resume} {nomLangueDoc(source, langue)} → {nomLangueDoc(cible, langue)}
+            {pages > 0
+              ? ` · ${pages} page${pages > 1 ? 's' : ''} × ${eur(devise.page)}`
+              : ` · ${eur(devise.page)} / page`}
           </span>
           <span className="amount-wrap">
             <s className="amount-old tabular">{eur(avant)}</s>
             <span className="amount tabular">
-              {apres.toLocaleString('fr-FR')}
-              <sup>€</sup>
+              {eur(apres)}
             </span>
           </span>
         </div>
@@ -403,7 +430,7 @@ export default function CarteCommande() {
         {postal && (
           <div className="ligne-sup">
             <span>Envoi de l&apos;original par courrier</span>
-            <span className="tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
+            <span className="tabular">+&nbsp;{eur(devise.envoi ?? 0)}</span>
           </div>
         )}
 
@@ -421,9 +448,9 @@ export default function CarteCommande() {
             />
           </svg>
           <span className="u-title">
-            {fichiers.length === 0 ? 'Déposez vos documents ici' : 'Ajouter d’autres documents'}
+            {fichiers.length === 0 ? t.deposer : t.deposerPlus}
           </span>
-          <span className="u-sub">Bulletins, relevés, diplômes · plusieurs fichiers à la fois</span>
+          <span className="u-sub">{t.deposerSous}</span>
           <input
             type="file"
             ref={refFichier}
@@ -441,7 +468,7 @@ export default function CarteCommande() {
             <div className="liste-tete">
               <span>
                 {depotEnCours
-                  ? 'Lecture des documents…'
+                  ? t.lecture
                   : `${fichiers.length} document${fichiers.length > 1 ? 's' : ''} · ${pages} page${pages > 1 ? 's' : ''}`}
               </span>
               {!depotEnCours && refDepot ? <span className="liste-ok">✓</span> : null}
@@ -480,7 +507,7 @@ export default function CarteCommande() {
                 id="email"
                 inputMode="email"
                 autoComplete="email"
-                placeholder="votre@email.fr"
+                placeholder={t.email}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={email !== '' && !emailValide(email)}
@@ -495,7 +522,7 @@ export default function CarteCommande() {
                 <input
                   type="text"
                   autoComplete="given-name"
-                  placeholder="Prénom"
+                  placeholder={t.prenom}
                   value={prenom}
                   onChange={(e) => setPrenom(e.target.value)}
                   required
@@ -515,7 +542,7 @@ export default function CarteCommande() {
               <textarea
                 className="revele"
                 rows={2}
-                placeholder="Une précision sur votre dossier ? (facultatif)"
+                placeholder={t.remarque}
                 value={remarque}
                 onChange={(e) => setRemarque(e.target.value)}
               />
@@ -532,12 +559,12 @@ export default function CarteCommande() {
                   onChange={(e) => setPostal(e.target.checked)}
                 />
                 <span className="op-txt">
-                  <span className="op-titre">Recevoir aussi l&apos;original par courrier</span>
+                  <span className="op-titre">{t.envoiTitre}</span>
                   <span className="op-sub">
                     Exemplaire papier tamponné et signé, envoi suivi en France
                   </span>
                 </span>
-                <span className="op-prix tabular">+&nbsp;{eur(PRIX_ENVOI)}</span>
+                <span className="op-prix tabular">+&nbsp;{eur(devise.envoi ?? 0)}</span>
               </label>
             )}
 
@@ -546,7 +573,7 @@ export default function CarteCommande() {
                 <input
                   type="text"
                   autoComplete="street-address"
-                  placeholder="Numéro et rue"
+                  placeholder={t.adresse}
                   value={adresse}
                   onChange={(e) => setAdresse(e.target.value)}
                   required
@@ -556,7 +583,7 @@ export default function CarteCommande() {
                     type="text"
                     inputMode="numeric"
                     autoComplete="postal-code"
-                    placeholder="Code postal"
+                    placeholder={t.codePostal}
                     maxLength={5}
                     value={codePostal}
                     onChange={(e) => setCodePostal(e.target.value.replace(/\D/g, ''))}
@@ -566,7 +593,7 @@ export default function CarteCommande() {
                   <input
                     type="text"
                     autoComplete="address-level2"
-                    placeholder="Ville"
+                    placeholder={t.ville}
                     value={ville}
                     onChange={(e) => setVille(e.target.value)}
                     required
@@ -589,7 +616,7 @@ export default function CarteCommande() {
         >
           {envoi
             ? 'Envoi en cours…'
-            : `Payer ${eur(total)} et faire traduire ${fichiers.length > 1 ? 'mes documents' : 'mon document'}`}
+            : (fichiers.length > 1 ? t.payer : t.payerUn).replace('{montant}', eur(total))}
         </button>
 
         {/* Le vrai bouton Apple Pay : il ouvre la feuille du système au doigt,
@@ -603,14 +630,15 @@ export default function CarteCommande() {
             actif={Boolean(refDepot) && emailPret && adresseComplete && !depotEnCours}
             manque={
               fichiers.length === 0
-                ? 'Déposez vos documents pour payer en un geste'
+                ? t.deposerPourExpress
                 : depotEnCours || !refDepot
-                  ? 'Vos documents finissent de se déposer…'
+                  ? t.depotEnCours
                   : !emailPret
-                    ? 'Renseignez votre e-mail pour payer en un geste'
-                    : 'Complétez votre adresse postale'
+                    ? t.renseignerEmail
+                    : t.completerAdresse
             }
             surErreur={setMessage}
+            t={t}
             donnees={{
                 reference: refDepot,
                 email,
@@ -634,19 +662,19 @@ export default function CarteCommande() {
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
             </svg>
-            Traducteur assermenté, agréé Cour d&apos;appel
+            {t.garantieTraducteur}
           </div>
           <div>
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
             </svg>
-            Paiement chiffré — traité par Stripe
+            {t.garantiePaiement}
           </div>
           <div>
             <svg viewBox="0 0 20 20" fill="currentColor">
               <path d="M8 13.4 4.8 10.2l1.1-1.1L8 11.2l6.1-6.1 1.1 1.1z" />
             </svg>
-            Fichiers supprimés après livraison (RGPD)
+            {t.garantieSuppression.replace('{n}', String(CONSERVATION_JOURS))}
           </div>
         </div>
       </div>
@@ -654,13 +682,13 @@ export default function CarteCommande() {
       <div className={`sticky-cta${cachetVisible ? ' is-visible' : ''}`}>
         <div>
           <span className="sp-amount tabular">
-            {total.toLocaleString('fr-FR', { minimumFractionDigits: postal ? 2 : 0 })}&nbsp;€
+            {eur(total)}
           </span>
           {/* Le prix barré ne s'affiche plus dès qu'un supplément s'ajoute :
               comparer 35 € de traduction à un total incluant le port serait
               un prix de référence trompeur. */}
           <span className="sp-label">
-            {postal ? 'envoi de l’original inclus' : <><s>{eur(avant)}</s> · tout compris</>}
+            {postal ? t.portInclus : <><s>{eur(avant)}</s> · {t.toutCompris}</>}
           </span>
         </div>
         <button
@@ -674,7 +702,7 @@ export default function CarteCommande() {
             }, 500);
           }}
         >
-          Traduire mes documents
+          {t.cta}
         </button>
       </div>
     </>

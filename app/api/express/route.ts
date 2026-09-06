@@ -21,7 +21,7 @@ export async function POST(requete: Request) {
 
   const texte = (cle: string) => String(corps[cle] ?? '').trim();
 
-  const { refus, commande, pages, montant } = await preparer({
+  const { refus, commande, pages, montant, devise } = await preparer({
     reference: texte('reference'),
     email: texte('email'),
     prenom: texte('prenom'),
@@ -51,8 +51,9 @@ export async function POST(requete: Request) {
       montant: montant!,
       email: commande!.client.email,
       pages: pages!,
+      devise: devise!,
     });
-    return NextResponse.json({ clientSecret: intention.client_secret, montant });
+    return NextResponse.json({ clientSecret: intention.client_secret, montant, devise: devise!.code });
   } catch (e) {
     console.error('[express] échec de la création du paiement', e);
     return NextResponse.json(

@@ -1,5 +1,7 @@
 'use client';
 
+import type { Tunnel } from '@/lib/traductions';
+
 import { useEffect, useState } from 'react';
 import type { Stripe } from '@stripe/stripe-js';
 import {
@@ -91,11 +93,13 @@ function Bouton({
   actif,
   manque,
   surErreur,
+  t,
 }: {
   donnees: DonneesExpress;
   actif: boolean;
   manque: string;
   surErreur: (m: string) => void;
+  t: Tunnel;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -132,7 +136,7 @@ function Bouton({
         onConfirm={async () => {
           if (!stripe || !elements) return;
           if (!donnees.reference) {
-            surErreur('Vos documents finissent de se déposer, réessayez dans un instant.');
+            surErreur(t.depotEnCours);
             return;
           }
           try {
@@ -143,7 +147,7 @@ function Bouton({
             });
             const json = await r.json();
             if (!r.ok || !json.clientSecret) {
-              throw new Error(json.erreur || "Le paiement n'a pas pu être initialisé.");
+              throw new Error(json.erreur || t.erreurGenerale);
             }
 
             const { error } = await stripe.confirmPayment({
@@ -155,9 +159,9 @@ function Bouton({
                 )}`,
               },
             });
-            if (error) surErreur(error.message ?? 'Le paiement a été refusé.');
+            if (error) surErreur(error.message ?? t.erreurPaiementRefuse);
           } catch (e) {
-            surErreur(e instanceof Error ? e.message : 'Le paiement a échoué. Réessayez.');
+            surErreur(e instanceof Error ? e.message : t.erreurPaiement);
           }
         }}
       />
@@ -176,6 +180,7 @@ export default function BoutonExpress(props: {
   actif: boolean;
   manque: string;
   surErreur: (m: string) => void;
+  t: Tunnel;
 }) {
   /* Monté dès le premier écran, avant même le dépôt : le visiteur doit voir
      tout de suite qu'il pourra payer en un geste. Il reste grisé et inerte

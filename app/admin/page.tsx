@@ -8,6 +8,7 @@ import {
   stockageConfigure,
 } from '@/lib/stockage';
 import { COOKIE, authConfiguree, egal, empreinte, estConnecte } from '@/lib/auth';
+import { nomLangueDoc } from '@/lib/langues';
 import LivraisonDossier from '@/components/LivraisonDossier';
 
 export const dynamic = 'force-dynamic';
@@ -286,7 +287,11 @@ export default async function Admin({
               {f.client.prenom} {f.client.nom} — <a href={`mailto:${f.client.email}`}>{f.client.email}</a>
             </p>
             <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--ink-soft)' }}>
-              {f.langues.source} → {f.langues.cible} ·{' '}
+              {/* Les commandes récentes enregistrent un CODE (« fr »), les
+                  anciennes un libellé (« Français »). nomLangueDoc rend le
+                  libellé français dans les deux cas : il renvoie ce qu'il ne
+                  reconnaît pas tel quel. */}
+              {nomLangueDoc(f.langues.source)} → {nomLangueDoc(f.langues.cible)} ·{' '}
               {f.fichiers?.length ?? 0} document{(f.fichiers?.length ?? 0) > 1 ? 's' : ''} ·{' '}
               <strong>
                 {f.pages ?? 0} page{(f.pages ?? 0) > 1 ? 's' : ''}

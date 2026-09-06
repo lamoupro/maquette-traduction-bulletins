@@ -11,6 +11,7 @@ import { reference, referenceValide, refusFichiers } from '@/lib/commande';
 import { compterPages } from '@/lib/pages';
 import { reconnaitre, refusDeType } from '@/lib/signature';
 import { MAX_PAGES } from '@/lib/data';
+import { deviseDuPays } from '@/lib/devises';
 
 export const runtime = 'nodejs';
 
@@ -120,11 +121,24 @@ export async function POST(requete: Request) {
        confirmé — sans cookie déposé chez le visiteur. */
     const clic = String(donnees.get('clic') ?? '').trim().slice(0, 200) || null;
 
+    /* La devise est arrêtée ICI, une fois pour toutes, d'après le pays d'où
+       part la requête. Vercel le pose sur chaque appel ; en développement il
+       est absent, et on retombe sur le dollar. Tout le reste du parcours —
+       affichage, session Stripe, e-mails — relira cette valeur au lieu de la
+       recalculer, pour qu'un prix vu ne puisse jamais différer d'un prix payé. */
+    const pays = requete.headers.get('x-vercel-ip-country');
+    const devise = deviseDuPays(pays);
+
     await ecrireFiche(ref, {
       reference: ref,
       recuLe: new Date().toISOString(),
       statut: 'depose',
       clic,
+      pays,
+      devise: devise.code,
+      // Langue du site où la commande a été passée : elle décide de la langue
+      // des e-mails, rien d'autre.
+      langue: (String(donnees.get('langue') ?? '').trim() || 'fr').slice(0, 5),
       pages: total,
       fichiers: contenus.map((c) => ({
         nom: c.fichier.name,
@@ -152,6 +166,7 @@ export async function POST(requete: Request) {
     reference: ref,
     nombre: contenus.length,
     pages: total,
+    devise: deviseDuPays(requete.headers.get('x-vercel-ip-country')),
     detail: contenus.map((c) => ({ nom: c.fichier.name, pages: c.pages })),
   });
 }

@@ -6,3 +6,6 @@ node_modules/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+
+# Maquette de démarchage : logo d'un établissement tiers, ne doit jamais partir en ligne.
+public/demo-towson/

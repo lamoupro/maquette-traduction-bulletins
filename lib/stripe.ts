@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { PRIX_ENVOI, PRIX_OFFRE } from './data';
+import { versUniteStripe, type Devise } from './devises';
 
 /* Paiement Stripe, en mode Checkout intégré.
 
@@ -23,8 +23,10 @@ export function stripe() {
 
 const SITE = process.env.SITE_URL ?? 'https://protranslayte.com';
 
-/** Stripe raisonne en centimes : 25 € s'écrit 2500. */
-const centimes = (euros: number) => Math.round(euros * 100);
+/* Stripe compte en plus petite unité, et toutes les devises n'ont pas deux
+   décimales : le dinar tunisien en a trois, le franc CFA aucune. La conversion
+   vit dans lib/devises.ts, à un seul endroit — se tromper ici facture cent
+   fois trop. */
 
 /* Intention de paiement, pour le geste unique.
 
@@ -37,10 +39,11 @@ export async function creerIntention(opts: {
   montant: number;
   email: string;
   pages: number;
+  devise: Devise;
 }) {
   return stripe().paymentIntents.create({
-    amount: centimes(opts.montant),
-    currency: 'eur',
+    amount: versUniteStripe(opts.montant, opts.devise.code),
+    currency: opts.devise.code.toLowerCase(),
     // Restreint aux moyens qui savent s'ouvrir en une feuille système.
     automatic_payment_methods: { enabled: true },
     receipt_email: opts.email || undefined,
@@ -56,13 +59,15 @@ export async function creerSession(opts: {
   email: string;
   source: string;
   cible: string;
+  devise: Devise;
 }) {
+  const money = opts.devise.code.toLowerCase();
   const lignes: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     {
       quantity: opts.pages,
       price_data: {
-        currency: 'eur',
-        unit_amount: centimes(PRIX_OFFRE),
+        currency: money,
+        unit_amount: versUniteStripe(opts.devise.page, opts.devise.code),
         product_data: {
           name: 'Traduction assermentée',
           description: `${opts.source} → ${opts.cible} · par page`,
@@ -71,12 +76,13 @@ export async function creerSession(opts: {
     },
   ];
 
-  if (opts.envoiPostal) {
+  // L'envoi papier ne s'ajoute que là où il est réellement proposé.
+  if (opts.envoiPostal && opts.devise.envoi) {
     lignes.push({
       quantity: 1,
       price_data: {
-        currency: 'eur',
-        unit_amount: centimes(PRIX_ENVOI),
+        currency: money,
+        unit_amount: versUniteStripe(opts.devise.envoi, opts.devise.code),
         product_data: {
           name: "Envoi de l'original par courrier",
           description: 'Courrier suivi, France',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
+import { depuisUniteStripe } from '@/lib/devises';
 import { ecrireFiche, lireFiche } from '@/lib/stockage';
 import { envoyerEmails } from '@/lib/email';
 
@@ -19,7 +20,12 @@ export const runtime = 'nodejs';
 
 /* Les deux chemins de paiement produisent des objets différents — une
    session Checkout pour la carte, une intention pour Apple Pay. On les
-   réduit à ce dont la commande a besoin. */
+   réduit à ce dont la commande a besoin.
+
+   Le montant se convertit par lib/devises.ts et non par une division par cent :
+   le franc CFA n'a pas de décimale et le dinar tunisien en a trois. Diviser
+   par cent partout donnerait un encaissement lu cent fois trop bas sur l'un,
+   dix fois trop haut sur l'autre — et l'écart passerait pour un code promo. */
 type Encaissement = {
   id: string;
   paymentIntent: string | null;
@@ -78,7 +84,7 @@ async function traiter(reference: string, enc: Encaissement) {
      façon de repérer un encaissement qui ne correspondrait à rien. */
   if (Math.abs(enc.montant - commande.montant) > 0.01) {
     console.log(
-      `[webhook] ${reference} : encaissé ${enc.montant} € pour ${commande.montant} € calculés`,
+      `[webhook] ${reference} : encaissé ${enc.montant} ${enc.devise ?? ''} pour ${commande.montant} ${commande.devise ?? ''} calculés`,
     );
   }
 
@@ -124,7 +130,7 @@ export async function POST(requete: Request) {
           id: s.id,
           paymentIntent:
             typeof s.payment_intent === 'string' ? s.payment_intent : (s.payment_intent?.id ?? null),
-          montant: (s.amount_total ?? 0) / 100,
+          montant: depuisUniteStripe(s.amount_total ?? 0, (s.currency ?? 'eur').toUpperCase()),
           devise: s.currency,
           nom: s.customer_details?.name,
           email: s.customer_details?.email,
@@ -147,7 +153,10 @@ export async function POST(requete: Request) {
         await traiter(reference, {
           id: pi.id,
           paymentIntent: pi.id,
-          montant: (pi.amount_received || pi.amount) / 100,
+          montant: depuisUniteStripe(
+            pi.amount_received || pi.amount,
+            (pi.currency ?? 'eur').toUpperCase(),
+          ),
           devise: pi.currency,
           nom: charge?.billing_details?.name ?? null,
           email: charge?.billing_details?.email ?? pi.receipt_email ?? null,

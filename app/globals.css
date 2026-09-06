@@ -558,3 +558,26 @@
 
   /* Le nombre de documents, en lecture seule : il compte les fichiers. */
   .qty-lecture{font-size:0.82rem;font-weight:600;color:var(--brass-deep);white-space:nowrap;}
+
+  /* Sélecteur de langue, dans la barre de navigation. Discret : c'est une
+     échappatoire pour qui a été mal détecté, pas un élément d'interface à
+     mettre en avant. */
+  .choix-langue select{
+    appearance:none;border:1px solid var(--rule);background:var(--paper-raised);
+    color:var(--ink-soft);font-family:var(--font-body);font-size:0.85rem;
+    padding:8px 26px 8px 11px;border-radius:5px;cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' stroke='%2355647C' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 9px center;background-size:10px;
+  }
+  .choix-langue select:hover{border-color:var(--brass);color:var(--ink);}
+  .visuellement-cache{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+
+  /* Mention « traduit du français » sous un avis. Discrète mais présente : une
+     traduction n'est pas une citation, et le lecteur doit pouvoir le savoir. */
+  .review-traduit{
+    display:block;font-size:0.7rem;color:var(--ink-soft);opacity:0.75;
+    font-style:italic;margin-top:1px;
+  }

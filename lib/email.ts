@@ -1,4 +1,77 @@
 import { Resend } from 'resend';
+import { deviseParCode, montantLisible } from './devises';
+import { nomLangueDoc } from './langues';
+
+/* Deux langues d'e-mail, pas quatre.
+
+   L'anglais pour tout le monde SAUF le site français. Les clients qui
+   commandent en français le font pour l'administration française, pas pour une
+   université américaine : leur écrire en anglais serait une régression sur
+   l'activité qui tourne. Tous les autres — espagnol, portugais, anglais —
+   partent aux États-Unis et lisent l'anglais.
+
+   La langue est celle du site où la commande a été passée, enregistrée au
+   dépôt. Un Brésilien qui a lu un site en portugais et reçoit une confirmation
+   en français doute d'avoir commandé au bon endroit. */
+type LangueMail = 'fr' | 'en';
+const langueMail = (c: Commande): LangueMail => (c.langue === 'fr' ? 'fr' : 'en');
+
+const MOTS = {
+  fr: {
+    sujetRecu: (r: string) => `Votre demande ${r} est enregistrée`,
+    titreRecu: 'Votre demande est bien enregistrée',
+    bonjour: (p: string) => `Bonjour ${p},`,
+    recu: 'Nous avons bien reçu votre demande de traduction. Elle est prise en charge.',
+    reference: 'Référence',
+    aTraduire: 'À traduire',
+    envoi: 'Envoi papier',
+    montant: 'Montant',
+    page: (n: number) => `${n} page${n > 1 ? 's' : ''}`,
+    livraison:
+      '<strong>Livraison sous 24 à 48 h ouvrées.</strong> Vous recevrez le document certifié à cette même adresse.',
+    papier:
+      "L'exemplaire papier tamponné et signé part par courrier suivi dans les 48 h qui suivent la traduction. Vous n'avez pas à l'attendre pour utiliser la version numérique.",
+    question: 'Une question ? Répondez simplement à ce message en rappelant votre référence.',
+    sujetPret: (r: string) => `Votre traduction ${r} est prête`,
+    titrePret: 'Votre traduction est prête',
+    pret: 'Votre traduction certifiée est terminée. Vous la trouverez en pièce jointe de ce message.',
+    pretLourd:
+      "Votre traduction certifiée est terminée. Elle vous parvient dans un message séparé, son poids dépassant la limite d'envoi.",
+    traduit: 'Traduit',
+    enregistrez: (d: string) =>
+      `<strong>Enregistrez vos fichiers dès maintenant.</strong><br>Vos documents — originaux comme traductions — sont conservés chez nous jusqu'au <strong>${d}</strong>, puis supprimés définitivement. Passé cette date, nous ne pourrons plus vous les renvoyer.`,
+    certificat:
+      "La traduction est accompagnée d'un <em>certificate of translation accuracy</em>, le format attendu par les universités américaines.",
+    locale: 'fr-FR',
+  },
+  en: {
+    sujetRecu: (r: string) => `Your request ${r} has been received`,
+    titreRecu: 'Your request has been received',
+    bonjour: (p: string) => `Hi ${p},`,
+    recu: 'We have received your translation request and it is now being handled.',
+    reference: 'Reference',
+    aTraduire: 'To translate',
+    envoi: 'Postal copy',
+    montant: 'Amount',
+    page: (n: number) => `${n} page${n > 1 ? 's' : ''}`,
+    livraison:
+      '<strong>Delivered within 24 to 48 business hours.</strong> The certified document will arrive at this same address.',
+    papier:
+      'The stamped paper copy is posted by tracked mail within 48 hours of the translation. You do not need to wait for it to use the digital version.',
+    question: 'A question? Just reply to this message and quote your reference.',
+    sujetPret: (r: string) => `Your translation ${r} is ready`,
+    titrePret: 'Your translation is ready',
+    pret: 'Your certified translation is complete. You will find it attached to this message.',
+    pretLourd:
+      'Your certified translation is complete. It is coming in a separate message, as it exceeds the attachment limit.',
+    traduit: 'Translated',
+    enregistrez: (d: string) =>
+      `<strong>Save your files now.</strong><br>Your documents — originals and translations alike — are kept until <strong>${d}</strong>, then permanently deleted. After that date we will no longer be able to send them to you.`,
+    certificat:
+      'The translation comes with a <em>certificate of translation accuracy</em>, the format US universities expect.',
+    locale: 'en-US',
+  },
+} as const;
 
 /* Envoi des e-mails transactionnels.
 
@@ -29,13 +102,17 @@ export type Commande = {
   langues: { source: string; cible: string };
   pages: number;
   montant: number;
+  devise?: string;
+  /** Langue du site où la commande a été passée. */
+  langue?: string;
   envoiPostal?: boolean;
   adressePostale?: { adresse: string; codePostal: string; ville: string } | null;
   remarque?: string;
 };
 
-const montantLisible = (n: number) =>
-  n.toLocaleString('fr-FR', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2 });
+/* Le montant s'écrit dans la devise de la commande. Un client facturé en
+   dollars qui reçoit une confirmation en euros doute de tout le reste. */
+const somme = (c: Commande) => montantLisible(c.montant, deviseParCode(c.devise));
 
 const echapper = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -73,48 +150,38 @@ const ligne = (t: string) =>
 
 /** Confirmation envoyée au client dès l'enregistrement de sa commande. */
 function messageClient(c: Commande) {
+  const m = MOTS[langueMail(c)];
+  const langues = `${nomLangueDoc(c.langues.source, langueMail(c))} → ${nomLangueDoc(c.langues.cible, langueMail(c))}`;
+
   const corps =
-    ligne(`Bonjour ${echapper(c.client.prenom)},`) +
-    ligne(
-      `Nous avons bien reçu votre demande de traduction assermentée. Un traducteur assermenté la prend en charge.`,
-    ) +
+    ligne(m.bonjour(echapper(c.client.prenom))) +
+    ligne(m.recu) +
     `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0;border-top:1px dashed #DDE4EE;border-bottom:1px dashed #DDE4EE;">
-       <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">Référence</td>
+       <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">${m.reference}</td>
            <td style="padding:12px 0;font-size:0.9rem;text-align:right;font-weight:700;">${echapper(c.reference)}</td></tr>
-       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">À traduire</td>
-           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.pages} page${c.pages > 1 ? 's' : ''} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
+       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">${m.aTraduire}</td>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${m.page(c.pages)} · ${echapper(langues)}</td></tr>
        ${
          c.envoiPostal && c.adressePostale
-           ? `<tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Envoi papier</td>
+           ? `<tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">${m.envoi}</td>
                   <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${echapper(c.adressePostale.adresse)}<br>${echapper(c.adressePostale.codePostal)} ${echapper(c.adressePostale.ville)}</td></tr>`
            : ''
        }
-       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Montant</td>
-           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;font-weight:700;">${montantLisible(c.montant)} €</td></tr>
+       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">${m.montant}</td>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;font-weight:700;">${somme(c)}</td></tr>
      </table>` +
-    ligne(
-      `<strong>Livraison sous 24 à 48 h ouvrées.</strong> Vous recevrez le document certifié à cette même adresse.`,
-    ) +
-    (c.envoiPostal
-      ? ligne(
-          `L'exemplaire papier tamponné et signé part par courrier suivi dans les 48 h qui suivent la traduction. Vous n'avez pas à l'attendre pour utiliser la version numérique.`,
-        )
-      : '') +
-    ligne(
-      `<span style="color:#55647C;font-size:0.86rem;">Une question ? Répondez simplement à ce message en rappelant votre référence.</span>`,
-    );
+    ligne(m.livraison) +
+    (c.envoiPostal ? ligne(m.papier) : '') +
+    ligne(`<span style="color:#55647C;font-size:0.86rem;">${m.question}</span>`);
 
-  return {
-    subject: `Votre demande ${c.reference} est enregistrée`,
-    html: gabarit('Votre demande est bien enregistrée', corps),
-  };
+  return { subject: m.sujetRecu(c.reference), html: gabarit(m.titreRecu, corps) };
 }
 
 /** Notification interne : jamais de pièce jointe, uniquement un lien. */
 function messageInterne(c: Commande, nbFichiers: number) {
   const corps =
     ligne(
-      `<strong>${c.pages} page${c.pages > 1 ? 's' : ''}</strong> — ${echapper(c.langues.source)} → ${echapper(c.langues.cible)} — <strong>${montantLisible(c.montant)} €</strong>`,
+      `<strong>${c.pages} page${c.pages > 1 ? 's' : ''}</strong> — ${echapper(nomLangueDoc(c.langues.source, 'fr'))} → ${echapper(nomLangueDoc(c.langues.cible, 'fr'))} — <strong>${somme(c)}</strong>`,
     ) +
     ligne(
       `${echapper(c.client.prenom)} ${echapper(c.client.nom)} — <a href="mailto:${echapper(c.client.email)}" style="color:#1359B8;">${echapper(c.client.email)}</a>`,
@@ -138,7 +205,7 @@ function messageInterne(c: Commande, nbFichiers: number) {
      </p>`;
 
   return {
-    subject: `${c.envoiPostal ? '📮 ' : ''}Commande ${c.reference} — ${c.pages} page${c.pages > 1 ? 's' : ''} — ${montantLisible(c.montant)} €`,
+    subject: `${c.envoiPostal ? '📮 ' : ''}Commande ${c.reference} — ${c.pages} page${c.pages > 1 ? 's' : ''} — ${somme(c)}`,
     html: gabarit(`Nouvelle commande ${echapper(c.reference)}`, corps),
   };
 }
@@ -188,47 +255,31 @@ export async function envoyerEmails(c: Commande, nbFichiers: number) {
 const PIECES_JOINTES_MAX = 20 * 1024 * 1024;
 
 function messageLivraison(c: Commande, jusquAu: Date, jointes: boolean) {
-  const date = jusquAu.toLocaleDateString('fr-FR', {
+  const m = MOTS[langueMail(c)];
+  const date = jusquAu.toLocaleDateString(m.locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
+  const langues = `${nomLangueDoc(c.langues.source, langueMail(c))} → ${nomLangueDoc(c.langues.cible, langueMail(c))}`;
 
   const corps =
-    ligne(`Bonjour ${echapper(c.client.prenom)},`) +
-    ligne(
-      jointes
-        ? `Votre traduction certifiée est terminée. Vous la trouverez en pièce jointe de ce message.`
-        : `Votre traduction certifiée est terminée. Elle vous parvient dans un message séparé, son poids dépassant la limite d'envoi.`,
-    ) +
+    ligne(m.bonjour(echapper(c.client.prenom))) +
+    ligne(jointes ? m.pret : m.pretLourd) +
     `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:16px 0;border-top:1px dashed #DDE4EE;border-bottom:1px dashed #DDE4EE;">
-       <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">Référence</td>
+       <tr><td style="padding:12px 0;font-size:0.9rem;color:#55647C;">${m.reference}</td>
            <td style="padding:12px 0;font-size:0.9rem;text-align:right;font-weight:700;">${echapper(c.reference)}</td></tr>
-       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">Traduit</td>
-           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${c.pages} page${c.pages > 1 ? 's' : ''} · ${echapper(c.langues.source)} → ${echapper(c.langues.cible)}</td></tr>
+       <tr><td style="padding:0 0 12px;font-size:0.9rem;color:#55647C;">${m.traduit}</td>
+           <td style="padding:0 0 12px;font-size:0.9rem;text-align:right;">${m.page(c.pages)} · ${echapper(langues)}</td></tr>
      </table>` +
     `<p style="margin:0 0 10px;padding:12px 14px;background:#FBF2E2;border-left:3px solid #8A5A00;border-radius:0 6px 6px 0;font-size:0.94rem;line-height:1.55;">
-       <strong>Enregistrez vos fichiers dès maintenant.</strong><br>
-       Vos documents — originaux comme traductions — sont conservés chez nous
-       jusqu'au <strong>${date}</strong>, puis supprimés définitivement. Passé
-       cette date, nous ne pourrons plus vous les renvoyer.
+       ${m.enregistrez(date)}
      </p>` +
-    ligne(
-      `La traduction est accompagnée d'un <em>certificate of translation accuracy</em>, le format attendu par les universités américaines.`,
-    ) +
-    (c.envoiPostal
-      ? ligne(
-          `L'exemplaire papier part par courrier suivi dans les 48 h. Vous n'avez pas à l'attendre pour utiliser la version numérique.`,
-        )
-      : '') +
-    ligne(
-      `<span style="color:#55647C;font-size:0.86rem;">Une question ? Répondez à ce message en rappelant votre référence.</span>`,
-    );
+    ligne(m.certificat) +
+    (c.envoiPostal ? ligne(m.papier) : '') +
+    ligne(`<span style="color:#55647C;font-size:0.86rem;">${m.question}</span>`);
 
-  return {
-    subject: `Votre traduction ${c.reference} est prête`,
-    html: gabarit('Votre traduction est prête', corps),
-  };
+  return { subject: m.sujetPret(c.reference), html: gabarit(m.titrePret, corps) };
 }
 
 /**

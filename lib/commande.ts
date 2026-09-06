@@ -1,4 +1,5 @@
-import { MAX_DOCS, MAX_PAGES, PRIX_ENVOI, PRIX_OFFRE } from './data';
+import { MAX_DOCS, MAX_PAGES } from './data';
+import { USD, type Devise } from './devises';
 
 /* Règles partagées entre le dépôt, le paiement par carte et le paiement
    express. Les avoir en un seul endroit évite qu'une des trois routes
@@ -32,10 +33,18 @@ export function refusFichiers(fichiers: File[]): string | null {
 }
 
 /* Le montant est toujours recalculé côté serveur, et il se compte EN PAGES.
-   Le navigateur peut proposer un prix, il ne le décide jamais. */
-export function montantDe(pages: number, envoiPostal: boolean) {
+   Le navigateur peut proposer un prix, il ne le décide jamais.
+
+   La DEVISE non plus : elle vient de la commande, où le serveur l'a écrite au
+   dépôt d'après le pays de la requête. La reprendre du navigateur permettrait
+   de rejouer l'appel en annonçant un autre pays pour obtenir le tarif le plus
+   bas. */
+export function montantDe(pages: number, envoiPostal: boolean, devise: Devise = USD) {
   const p = Math.max(1, Math.min(MAX_PAGES, pages || 1));
-  return { pages: p, montant: p * PRIX_OFFRE + (envoiPostal ? PRIX_ENVOI : 0) };
+  // L'envoi postal n'existe pas partout : là où il n'est pas offert, le
+  // demander ne coûte rien et n'ajoute rien.
+  const port = envoiPostal && devise.envoi ? devise.envoi : 0;
+  return { pages: p, montant: p * devise.page + port, devise };
 }
 
 /** Une référence est-elle bien formée ? Garde-fou avant toute lecture. */
