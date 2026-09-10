@@ -9,3 +9,7 @@ next-env.d.ts
 
 # Maquette de démarchage : logo d'un établissement tiers, ne doit jamais partir en ligne.
 public/demo-towson/
+
+# Maquettes de démarchage : marques et dossiers de tiers, jamais en ligne.
+public/demo-trackhouse/
+donnees-demo/

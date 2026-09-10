@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { COOKIE_LANGUE, LANGUE_RACINE, LANGUES, langueChoisie } from '@/lib/langues';
+import { orgDuSousDomaine } from '@/lib/agence/host';
 
 /* Aiguillage de la langue, au premier passage seulement.
 
@@ -24,6 +25,24 @@ const PREFIXES = LANGUES.filter((l) => l !== LANGUE_RACINE);
 
 export function middleware(requete: NextRequest) {
   const { pathname } = requete.nextUrl;
+
+  /* Un sous-domaine de client — trackhouse.protranslayte.com — porte
+     l'organisation dans son HÔTE, pas dans son chemin. On la reporte dans le
+     chemin ICI, en interne, pour que tout le reste du code (pages, routes,
+     lib/agence/acces.ts…) continue de la lire comme il l'a toujours fait,
+     sous /agence/[org]/… Rien de ce qui vient après ce bloc ne sait qu'un
+     sous-domaine a existé.
+
+     Le garde-fou `!pathname.startsWith('/agence/')` évite de doubler le
+     préfixe si l'adresse longue est redemandée depuis le sous-domaine lui-même
+     — ce qui arrive après une redirection construite avec l'hôte réel plutôt
+     qu'avec l'adresse courte (voir lib/agence/host.ts, adresseAgence). */
+  const orgSlug = orgDuSousDomaine(requete.headers.get('host'));
+  if (orgSlug && !pathname.startsWith('/agence/')) {
+    const cible = requete.nextUrl.clone();
+    cible.pathname = `/agence/${orgSlug}${pathname === '/' ? '' : pathname}`;
+    return NextResponse.rewrite(cible);
+  }
 
   const prefixe = PREFIXES.find((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
   if (prefixe) {

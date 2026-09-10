@@ -1,0 +1,169 @@
+/* Le portail agence RÉEL — identité visuelle. Reprend délibérément le même
+   système de jetons que la démonstration (app/portal/portal.css) : mêmes
+   noms de variables, mêmes classes de composants (`.pt-carte`, `.pt-bouton`,
+   `.pt-champ`…), pour que « on garde le design actuel » soit vrai au sens
+   propre et pas seulement dans l'esprit. Les deux fichiers restent
+   INDÉPENDANTS l'un de l'autre — aucun des deux n'importe l'autre — pour que
+   personne ne puisse casser la démonstration en touchant à ceci, ni
+   l'inverse.
+
+   Une différence assumée : ici, pas de bascule animée depuis nos couleurs.
+   La démonstration PERFORME la révélation de la marque pour un prospect qui
+   la voit une fois ; ce portail-ci est celui qu'un vrai employé rouvre tous
+   les jours — il s'ouvre directement à ses couleurs, sans mise en scène. */
+
+.pt {
+  --pt-ground: #F2F5F9;
+  --pt-surface: #FFFFFF;
+  --pt-sunk: #F7F9FC;
+  --pt-ink: #10233C;
+  --pt-soft: #55647C;
+  --pt-faint: #8A99AE;
+  --pt-rule: #DDE4EE;
+  --pt-accent: #1359B8;
+  --pt-accent-tint: #E8F0FC;
+  --pt-vif: var(--pt-accent);
+  --pt-vif-sombre: #0E4695;
+  --pt-bouton-texte: #fff;
+  --pt-p-encre: var(--pt-ink);
+  --pt-p-signature: var(--pt-accent);
+  --pt-ok: #0E7A54;
+  --pt-ok-tint: #E4F2EC;
+  --pt-wait: #8A5A00;
+  --pt-wait-tint: #FBF2E2;
+  --pt-miss: #A32020;
+  --pt-miss-tint: #FBEBEA;
+
+  background: var(--pt-ground);
+  color: var(--pt-ink);
+  min-height: 100vh;
+  font-size: 15px;
+}
+.pt * { box-sizing: border-box; }
+.pt-wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- carte d'entrée ---------- */
+.pt-entree {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 48px 24px 80px;
+}
+.pt-carte {
+  width: 100%; max-width: 430px;
+  background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 10px; padding: 30px 32px;
+  display: flex; flex-direction: column;
+}
+.pt-carte-lab {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--pt-faint); margin-bottom: 9px;
+}
+.pt-carte h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 9px; }
+.pt-carte > p { margin: 0 0 20px; font-size: 0.92rem; color: var(--pt-soft); }
+.pt-carte-note { font-size: 0.84rem !important; color: var(--pt-soft); margin: 9px 0 20px !important; }
+.pt-carte-note strong { color: var(--pt-ink); }
+.pt-erreur {
+  font-size: 0.86rem; color: var(--pt-miss); background: var(--pt-miss-tint);
+  border-radius: 6px; padding: 9px 12px; margin: 0 0 18px;
+}
+
+/* Le verrou de marque, en tête de carte. */
+.pt-cartouche { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 2px solid var(--pt-p-signature); }
+.pt-notre-marque { font-weight: 800; font-size: 1.16rem; letter-spacing: -0.03em; white-space: nowrap; color: var(--pt-p-encre); }
+.pt-notre-marque .bleu { color: var(--pt-p-signature); }
+.pt-croix { font-size: 1.02rem; line-height: 1; opacity: 0.4; color: var(--pt-p-encre); }
+.pt-logo-org { height: 30px; width: auto; display: block; }
+
+/* Les trois façons de se connecter. */
+.pt-connexion-boutons { display: flex; flex-direction: column; gap: 9px; }
+.pt-bouton-fournisseur {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 11px 16px; border-radius: 7px;
+  border: 1px solid var(--pt-rule); background: var(--pt-surface);
+  color: var(--pt-ink); font: inherit; font-size: 0.92rem; font-weight: 600;
+  cursor: pointer;
+}
+.pt-bouton-fournisseur:hover { border-color: var(--pt-faint); background: var(--pt-sunk); }
+.pt-bouton-fournisseur svg { flex: none; }
+.pt-bouton-fournisseur.pt-passkey {
+  border-color: var(--pt-p-signature); color: var(--pt-p-encre);
+}
+
+.pt-separateur {
+  display: flex; align-items: center; gap: 12px; margin: 16px 0;
+  font-size: 0.72rem; color: var(--pt-faint); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.pt-separateur::before, .pt-separateur::after {
+  content: ''; flex: 1; height: 1px; background: var(--pt-rule);
+}
+
+.pt-champ { display: block; }
+.pt-champ span {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: var(--pt-soft); margin-bottom: 6px;
+}
+.pt-champ input {
+  width: 100%; font: inherit; font-size: 0.95rem;
+  padding: 11px 13px; border-radius: 7px;
+  border: 1px solid var(--pt-rule); background: var(--pt-sunk);
+  color: var(--pt-ink);
+}
+.pt-champ input:focus {
+  outline: none; border-color: var(--pt-accent); background: var(--pt-surface);
+  box-shadow: 0 0 0 3px var(--pt-accent-tint);
+}
+
+.pt-large { justify-content: center; width: 100%; padding: 12px 16px; font-size: 0.92rem; }
+.pt-bouton {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+  border-radius: 6px; border: 1px solid var(--pt-rule); background: var(--pt-surface);
+  color: var(--pt-ink); font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; cursor: pointer; font-family: inherit;
+}
+.pt-bouton:hover { border-color: var(--pt-accent); color: var(--pt-accent); }
+.pt-bouton.primaire { background: var(--pt-vif); border-color: var(--pt-vif); color: var(--pt-bouton-texte); }
+.pt-bouton.primaire:hover { background: var(--pt-vif-sombre); border-color: var(--pt-vif-sombre); }
+.pt-bouton[disabled] { opacity: 0.55; cursor: default; }
+
+.pt-carte-pied {
+  margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--pt-rule);
+  font-size: 0.78rem; color: var(--pt-faint); line-height: 1.5;
+}
+
+/* ---------- tableau de bord minimal ---------- */
+.pt-tete { background: var(--pt-surface); border-bottom: 1px solid var(--pt-rule); }
+.pt-tete .pt-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 24px; }
+.pt-role {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 4px; background: var(--pt-accent-tint); color: var(--pt-p-signature);
+}
+.pt-titre { padding: 28px 0 4px; }
+.pt-titre h1 { font-size: 1.42rem; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.pt-titre p { margin: 5px 0 0; color: var(--pt-soft); font-size: 0.9rem; }
+
+.pt-prompt-passkey {
+  background: var(--pt-accent-tint); border: 1px solid var(--pt-rule);
+  border-radius: 8px; padding: 16px 20px; margin: 18px 0; display: flex;
+  gap: 18px; align-items: center; flex-wrap: wrap;
+}
+.pt-prompt-passkey h2 { font-size: 0.98rem; margin: 0 0 4px; }
+.pt-prompt-passkey p { margin: 0; font-size: 0.86rem; color: var(--pt-soft); max-width: 44ch; }
+.pt-prompt-passkey .pt-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pt-sessions {
+  margin: 28px 0; background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 8px; overflow: hidden;
+}
+.pt-sessions h2 { font-size: 1rem; margin: 0; padding: 14px 18px; border-bottom: 1px solid var(--pt-rule); }
+.pt-session-ligne {
+  display: flex; align-items: center; gap: 14px; padding: 12px 18px;
+  border-bottom: 1px solid var(--pt-rule); font-size: 0.87rem;
+}
+.pt-session-ligne:last-child { border-bottom: none; }
+.pt-session-ligne .pt-mono { font-family: var(--font-mono); font-size: 0.78rem; color: var(--pt-faint); }
+.pt-session-actuelle {
+  font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--pt-ok); background: var(--pt-ok-tint); padding: 2px 7px; border-radius: 3px;
+}
+.pt-session-ligne form { margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) { .pt, .pt * { transition: none !important; } }
