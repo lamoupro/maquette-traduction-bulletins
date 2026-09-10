@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { get } from '@vercel/blob';
 
 /* Lecture des pièces réelles de la démonstration.
 
@@ -10,23 +9,23 @@ import path from 'node:path';
    élève réel, jamais. Les y mettre reviendrait à publier le dossier scolaire
    de quelqu'un à une adresse devinable.
 
-   Ils vivent donc dans donnees-demo/, hors du dépôt et hors du statique, et
-   ne sortent que par une route qui vérifie la session. */
-
-const RACINE = path.join(process.cwd(), 'donnees-demo');
+   Elles vivent donc dans le store Blob PRIVÉ « demo-portail » — hors du
+   dépôt Git, hors du statique, introuvables sans le jeton du serveur — et ne
+   sortent que par une route qui vérifie la session. Un disque local aurait
+   fait l'affaire en développement, mais Vercel n'en garde aucun entre les
+   déploiements : voir scripts/televerser-blob.ts pour l'envoi initial. */
 
 /**
- * Le contenu d'une pièce de démonstration.
+ * Le contenu d'une pièce de démonstration, à son chemin dans le store — par
+ * exemple `folikoe/01-original.pdf` ou `logos/trackhouse-monogramme.png`.
  *
- * Le chemin vient de nos propres données, jamais d'une requête — mais on le
- * vérifie quand même. Une donnée de confiance aujourd'hui devient un champ
- * modifiable le jour où ces pièces viendront d'une base, et une remontée
- * `../../` lirait alors n'importe quel fichier du serveur.
+ * Le chemin vient de nos propres données, jamais d'une requête : voir les
+ * appelants dans lib/portail-demo.ts.
  */
-export async function lireFichierDemo(relatif: string): Promise<Buffer> {
-  const complet = path.resolve(RACINE, relatif);
-  if (complet !== path.normalize(complet) || !complet.startsWith(RACINE + path.sep)) {
-    throw new Error(`Chemin de démonstration hors périmètre : ${relatif}`);
+export async function lireFichierDemo(chemin: string): Promise<Buffer> {
+  const resultat = await get(chemin, { access: 'private' });
+  if (!resultat || !resultat.stream) {
+    throw new Error(`Fichier de démonstration introuvable : ${chemin}`);
   }
-  return readFile(complet);
+  return Buffer.from(await new Response(resultat.stream).arrayBuffer());
 }

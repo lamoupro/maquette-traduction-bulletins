@@ -16,7 +16,7 @@
 
    — Prince Folikoe est un CLIENT RÉEL, dont le dossier a été livré le
      28 août 2026. Ses bulletins sont les vrais, avec son accord. Ils vivent
-     dans public/demo-trackhouse/, dossier EXCLU DE GIT.
+     dans le store Blob privé « demo-portail », hors du dépôt Git.
    — tous les autres sont inventés, et doivent le rester. Aucune donnée d'un
      élève réel n'entre ici sans son accord explicite.
 
@@ -159,7 +159,7 @@ export const PARTENAIRES: Record<ClePartenaire, Partenaire> = {
        Le fichier vient du PDF HD qu'ils fournissent, détouré du blanc sur
        lequel il est livré : le tracé n'a presque que des obliques, et rendre
        simplement le blanc transparent y laisserait un liseré sur chaque bord. */
-    logo: '/demo-trackhouse/trackhouse-monogramme.png',
+    logo: '/portal/logo/trackhouse.png',
     logoLargeur: 263,
     logoHauteur: 240,
     responsable: 'Recruiting operations',
@@ -178,7 +178,7 @@ export const PARTENAIRES: Record<ClePartenaire, Partenaire> = {
     metier: 'International admissions',
     ville: 'Towson, Maryland',
     domaine: 'towson.edu',
-    logo: '/demo-towson/towson-university-logo-couleurs.png',
+    logo: '/portal/logo/towson.png',
     logoLargeur: 194,
     logoHauteur: 44,
     responsable: 'International Admissions',
@@ -299,8 +299,9 @@ const p = (
    travail n'a pas eu lieu.
 
    Les fichiers servis sont les VRAIS, avec l'accord de l'athlète. Ils vivent
-   dans donnees-demo/folikoe/ — hors du dépôt ET hors de public/, qui est servi
-   sans aucune garde. Voir lib/fichier-demo.ts. */
+   dans le store Blob privé « demo-portail », sous folikoe/ — hors du dépôt
+   Git ET hors de public/, qui est servi sans aucune garde. Voir
+   lib/fichier-demo.ts. */
 
 const COLLEGE = 'PT-260907-8X5T';
 const LYCEE = 'PT-260827-0RIT';
