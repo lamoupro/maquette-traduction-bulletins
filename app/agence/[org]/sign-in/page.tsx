@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { organisation } from '@/lib/agence/organisations';
 import { connexionEmail, connexionGoogle, connexionMicrosoft } from '../actions';
 import Connexion from './Connexion';
+import RebasculeIdentite from './RebasculeIdentite';
+import { scriptAntiFlash } from './script-anti-flash';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,17 +35,31 @@ export default async function EntreeAgence({
   if (!org) notFound();
 
   return (
-    <Connexion
-      orgSlug={org.slug}
-      refuse={refuse === '1'}
-      orgNom={org.nom}
-      logo={org.logo}
-      logoLargeur={org.logoLargeur}
-      logoHauteur={org.logoHauteur}
-      domaines={org.domaines.map((d) => d.domaine)}
-      actionGoogle={connexionGoogle.bind(null, org.slug)}
-      actionMicrosoft={connexionMicrosoft.bind(null, org.slug)}
-      actionEmail={connexionEmail.bind(null, org.slug)}
-    />
+    <>
+      {/* Bloquant, avant tout le reste : voir la note dans
+          RebasculeIdentite.tsx sur pourquoi ça doit s'exécuter avant la
+          première peinture plutôt que dans un effet React. */}
+      <script dangerouslySetInnerHTML={{ __html: scriptAntiFlash(org.slug) }} />
+      <RebasculeIdentite
+        orgSlug={org.slug}
+        couleurEncre={org.couleurEncre}
+        couleurSignature={org.couleurSignature}
+        couleurVif={org.couleurVif}
+        couleurVifSombre={org.couleurVifSombre}
+        couleurBoutonTexte={org.couleurBoutonTexte}
+      />
+      <Connexion
+        orgSlug={org.slug}
+        refuse={refuse === '1'}
+        orgNom={org.nom}
+        logo={org.logo}
+        logoLargeur={org.logoLargeur}
+        logoHauteur={org.logoHauteur}
+        domaines={org.domaines.map((d) => d.domaine)}
+        actionGoogle={connexionGoogle.bind(null, org.slug)}
+        actionMicrosoft={connexionMicrosoft.bind(null, org.slug)}
+        actionEmail={connexionEmail.bind(null, org.slug)}
+      />
+    </>
   );
 }

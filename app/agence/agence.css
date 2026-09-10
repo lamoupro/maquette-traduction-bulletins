@@ -7,10 +7,12 @@
    personne ne puisse casser la démonstration en touchant à ceci, ni
    l'inverse.
 
-   Une différence assumée : ici, pas de bascule animée depuis nos couleurs.
-   La démonstration PERFORME la révélation de la marque pour un prospect qui
-   la voit une fois ; ce portail-ci est celui qu'un vrai employé rouvre tous
-   les jours — il s'ouvre directement à ses couleurs, sans mise en scène. */
+   Une différence assumée : la bascule animée (protranslayte → couleurs du
+   partenaire) ne joue QUE sur l'écran de connexion, et pas à chaque visite —
+   voir app/agence/[org]/sign-in/RebasculeIdentite.tsx pour la logique de
+   « une fois, puis plus tant qu'on reste actif ». Le reste du portail — le
+   tableau de bord qu'un employé rouvre tous les jours — s'ouvre directement
+   à ses couleurs, sans mise en scène. */
 
 .pt {
   --pt-ground: #F2F5F9;
@@ -72,6 +74,22 @@
 .pt-notre-marque .bleu { color: var(--pt-p-signature); }
 .pt-croix { font-size: 1.02rem; line-height: 1; opacity: 0.4; color: var(--pt-p-encre); }
 .pt-logo-org { height: 30px; width: auto; display: block; }
+
+/* La bascule d'identité de l'écran de connexion — voir RebasculeIdentite.tsx.
+   Portée large volontairement : n'importe quel élément qui lit une variable
+   de marque doit suivre la transition, pas seulement le cartouche. */
+.pt-entree,
+.pt-entree .pt-carte,
+.pt-entree .pt-cartouche,
+.pt-entree .pt-notre-marque,
+.pt-entree .pt-notre-marque .bleu,
+.pt-entree .pt-croix,
+.pt-entree .pt-bouton {
+  transition: background-color 0.85s ease, color 0.85s ease, border-color 0.85s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-entree, .pt-entree * { transition: none !important; }
+}
 
 /* Les trois façons de se connecter. */
 .pt-connexion-boutons { display: flex; flex-direction: column; gap: 9px; }
