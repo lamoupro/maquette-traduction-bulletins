@@ -59,6 +59,9 @@ export default function RebasculeIdentite({
       el.style.setProperty('--pt-vif-sombre', couleurVifSombre);
       el.style.setProperty('--pt-bouton-texte', couleurBoutonTexte);
       el.style.setProperty('--pt-accent', couleurVifSombre);
+      // Le logo apparaît EN MÊME TEMPS que les couleurs, pas avant : voir
+      // agence.css, où script-anti-flash.ts avait retiré cette classe.
+      el.classList.add('est-revele');
     }, ATTENTE);
 
     return () => clearTimeout(t);

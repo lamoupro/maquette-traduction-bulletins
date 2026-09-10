@@ -35,6 +35,10 @@ export function scriptAntiFlash(orgSlug: string) {
       el.style.setProperty('--pt-vif-sombre', ${JSON.stringify(VIF_SOMBRE)});
       el.style.setProperty('--pt-bouton-texte', ${JSON.stringify(BOUTON_TEXTE)});
       el.style.setProperty('--pt-accent', ${JSON.stringify(VIF_SOMBRE)});
+      // Le logo du partenaire n'apparaît qu'à la révélation — voir agence.css
+      // et RebasculeIdentite.tsx, qui remet la classe en même temps que les
+      // vraies couleurs.
+      el.classList.remove('est-revele');
     } catch (e) {}
   })();`;
 }

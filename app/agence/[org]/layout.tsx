@@ -36,8 +36,12 @@ export default async function GabaritAgence({
     '--pt-accent': org.couleurVifSombre,
   } as React.CSSProperties;
 
+  /* « est-revele » commande l'apparition du logo partenaire (voir
+     agence.css) — présente par défaut, ici, pour que le tableau de bord
+     l'affiche sans mise en scène. Seul l'écran de connexion la retire un
+     instant : voir script-anti-flash.ts et RebasculeIdentite.tsx. */
   return (
-    <div className="pt" style={style}>
+    <div className="pt est-revele" style={style}>
       {children}
     </div>
   );
