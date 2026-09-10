@@ -37,6 +37,7 @@ export default function Recuperer({
   livraisons,
   rienATraduire,
   vue,
+  base = '/portal/dossier',
 }: {
   id: string;
   manquantes: string[];
@@ -48,6 +49,11 @@ export default function Recuperer({
   rienATraduire: boolean;
   /** Suffixe de rôle transmis à la route : elle revérifie le périmètre. */
   vue: string;
+  /* La route qui sert le dossier. Deux portails s'en servent — la
+     démonstration sous /portal, le portail réel d'un client sous son propre
+     sous-domaine — et ils ne gardent pas leur porte de la même façon. Le
+     composant, lui, n'a pas à le savoir. */
+  base?: string;
 }) {
   /* La boîte d'avertissement retient la livraison demandée : on n'ouvre pas un
      dialogue générique pour se retrouver ensuite à télécharger le mauvais. */
@@ -55,7 +61,7 @@ export default function Recuperer({
   const [prevenu, setPrevenu] = useState(false);
 
   const adresse = (e: Envoi) =>
-    `/portal/dossier?c=${encodeURIComponent(id)}&livraison=${encodeURIComponent(e.cle)}${vue}`;
+    `${base}?c=${encodeURIComponent(id)}&livraison=${encodeURIComponent(e.cle)}${vue}`;
 
   const sortables = livraisons.filter((e) => e.certifiees > 0);
   const incomplet = manquantes.length > 0;

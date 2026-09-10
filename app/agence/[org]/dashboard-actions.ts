@@ -1,8 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { eq } from 'drizzle-orm';
-import { auth } from '@/lib/agence/auth';
+import { auth, signOut } from '@/lib/agence/auth';
+import { adresseAgence } from '@/lib/agence/host';
 import { db } from '@/lib/agence/db/client';
 import { users } from '@/lib/agence/db/schema';
 import { revoquerSession } from '@/lib/agence/session';
@@ -32,4 +34,11 @@ export async function deconnecterAppareil(orgSlug: string, sessionToken: string)
      le bon geste. */
   await revoquerSession(sessionToken);
   revalidatePath(`/agence/${orgSlug}`);
+}
+
+/** Se déconnecter — renvoie sur l'écran d'entrée de la même organisation. */
+export async function deconnexion(orgSlug: string) {
+  const hote = (await headers()).get('host');
+  const proto = hote?.startsWith('localhost') ? 'http' : 'https';
+  await signOut({ redirectTo: adresseAgence(orgSlug, hote, '/sign-in', `${proto}://${hote}`) });
 }

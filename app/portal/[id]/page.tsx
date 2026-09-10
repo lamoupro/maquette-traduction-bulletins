@@ -12,9 +12,9 @@ import {
   messageRelance,
   trouver,
 } from '@/lib/portail-demo';
-import DocumentPaire from './DocumentPaire';
-import Recuperer from './Recuperer';
-import RelanceWhatsApp from './RelanceWhatsApp';
+import DocumentPaire from '@/components/portail/DocumentPaire';
+import Recuperer from '@/components/portail/Recuperer';
+import RelanceWhatsApp from '@/components/portail/RelanceWhatsApp';
 
 /* Le dossier d'un candidat.
 
