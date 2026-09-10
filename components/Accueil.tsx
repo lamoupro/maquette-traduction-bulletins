@@ -23,7 +23,9 @@ function texteAvis(a: Avis, langue: Langue) {
   const traduction = a[langue as 'en' | 'es' | 'pt'];
   return traduction ? { texte: traduction, traduit: true } : { texte: a.texte, traduit: false };
 }
+import { headers } from 'next/headers';
 import { chemin, type Langue } from '@/lib/langues';
+import { deviseDuPays } from '@/lib/devises';
 import { textes } from '@/lib/traductions';
 
 const Coche = () => (
@@ -80,8 +82,19 @@ function SerieLogos({ muet, t }: { muet?: boolean; t: ReturnType<typeof textes> 
   );
 }
 
-export default function Accueil({ langue }: { langue: Langue }) {
+export default async function Accueil({ langue }: { langue: Langue }) {
   const t = textes(langue);
+
+  /* La devise est résolue DÈS LE RENDU, d'après le pays de la requête.
+
+     La carte de commande démarrait en dollars et n'apprenait la vraie devise
+     qu'à la réponse du premier dépôt : un visiteur français lisait « 25 € » dans
+     le titre et « Payer $25 » sur le bouton, sur la même page. Le prix affiché
+     ne doit jamais dépendre d'un aller-retour qui n'a pas encore eu lieu.
+
+     Le serveur reste seul juge : cette valeur sert à AFFICHER, et le dépôt
+     recalculera la sienne à partir du même en-tête. */
+  const devise = deviseDuPays((await headers()).get('x-vercel-ip-country'));
   const p = (suite: string) => chemin(langue, suite);
 
   return (
@@ -133,7 +146,7 @@ export default function Accueil({ langue }: { langue: Langue }) {
 
           <div className="hero-stage">
             <Comparateur t={t.tunnel} />
-            <CarteCommande t={t.tunnel} langue={langue} />
+            <CarteCommande t={t.tunnel} langue={langue} deviseInitiale={devise} />
           </div>
         </div>
       </section>

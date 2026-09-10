@@ -32,7 +32,17 @@ import {
 const emailValide = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 const cpValide = (v: string) => /^\d{5}$/.test(v.trim());
 
-export default function CarteCommande({ t, langue }: { t: Tunnel; langue: Langue }) {
+export default function CarteCommande({
+  t,
+  langue,
+  deviseInitiale,
+}: {
+  t: Tunnel;
+  langue: Langue;
+  /* Résolue par le serveur au rendu, d'après le pays. Sans elle, la carte
+     afficherait des dollars à un client français jusqu'à son premier dépôt. */
+  deviseInitiale: Devise;
+}) {
   /* Codes, pas libellés : c'est le code qui part au serveur et qui est
      enregistré. Le libellé n'existe qu'à l'écran, dans la langue du lecteur. */
   const [source, setSource] = useState('fr');
@@ -46,7 +56,7 @@ export default function CarteCommande({ t, langue }: { t: Tunnel; langue: Langue
   /* La devise est décidée par le SERVEUR, au dépôt, d'après le pays de la
      requête. On l'affiche telle qu'il l'a renvoyée. Tant que rien n'est déposé,
      c'est le dollar — le défaut du site. */
-  const [devise, setDevise] = useState<Devise>(USD);
+  const [devise, setDevise] = useState<Devise>(deviseInitiale);
   const [adresse, setAdresse] = useState('');
   const [codePostal, setCodePostal] = useState('');
   const [ville, setVille] = useState('');
