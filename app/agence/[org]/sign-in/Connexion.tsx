@@ -101,6 +101,10 @@ export default function Connexion({
             Open the link we just sent to <strong>{etatEmail.adresse}</strong> to sign in. It
             expires in <strong>10 minutes</strong> and can be used once.
           </p>
+          <p className="pt-carte-note">
+            Tip: open it in Safari or Chrome, not your mail app&apos;s built-in browser — that
+            keeps you signed in for 30 days instead of only until you close the mail app.
+          </p>
           <p className="pt-carte-note">No password to create, and nothing to install.</p>
         </div>
       </main>

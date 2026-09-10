@@ -136,8 +136,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           from: provider.from!,
           to: adresse,
           subject: `Sign in to the ${nomOrg} document portal`,
-          text: `Open this link to sign in to the ${nomOrg} document portal:\n\n${url}\n\nThis link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.`,
-          html: `<p>Open this link to sign in to the <strong>${nomOrg}</strong> document portal:</p><p><a href="${url}">${url}</a></p><p style="color:#666;font-size:13px">This link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.</p>`,
+          /* La consigne d'ouvrir dans le navigateur par défaut n'est pas
+             cosmétique : Outlook et Gmail ouvrent ce lien dans leur PROPRE
+             navigateur intégré, dont les cookies ne sont pas ceux de Safari
+             ou Chrome. La session s'y ouvre bien, mais devient invisible dès
+             qu'on quitte l'appli — on dirait alors que se reconnecter n'a
+             servi à rien. Le lien lui-même reste protégé (dix minutes, usage
+             unique) : c'est sans risque de l'ouvrir ailleurs que dans l'appli
+             qui l'a reçu. */
+          text: `Open this link to sign in to the ${nomOrg} document portal:\n\n${url}\n\nTip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.\n\nThis link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.`,
+          html: `<p>Open this link to sign in to the <strong>${nomOrg}</strong> document portal:</p><p><a href="${url}">${url}</a></p><p style="color:#666;font-size:13px">Tip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.</p><p style="color:#666;font-size:13px">This link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.</p>`,
         });
         if (error) throw new Error(`Resend: ${error.message}`);
       },
