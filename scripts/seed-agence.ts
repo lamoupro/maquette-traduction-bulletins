@@ -24,7 +24,11 @@ async function main() {
     .values({
       slug: 'trackhouse',
       nom: 'Trackhouse',
-      logo: '/demo-trackhouse/trackhouse-monogramme.png',
+      /* Sous public/marques/, PAS public/demo-trackhouse/ : ce dernier est
+         exclu du dépôt (voir .gitignore) et réservé à la maquette de
+         démarchage — il n'existe pas sur un déploiement réel. Le vrai
+         portail a besoin que ce fichier soit vraiment servi. */
+      logo: '/marques/trackhouse-monogramme.png',
       logoLargeur: 263,
       logoHauteur: 240,
       // La même palette que la démonstration — voir app/portal/portal.css.
