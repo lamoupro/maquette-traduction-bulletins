@@ -25,7 +25,6 @@ export default async function Sportifs({ params }: { params: Promise<{ org: stri
   const total = lignes.length;
   const complets = lignes.filter((l) => l.a.resume.ton === 'ok').length;
   const bloques = lignes.filter((l) => l.a.resume.ton === 'manque').length;
-  const demos = lignes.filter((l) => !l.c.reel).length;
 
   return (
     <>
@@ -58,14 +57,6 @@ export default async function Sportifs({ params }: { params: Promise<{ org: stri
           </section>
         ) : (
           <>
-            {demos > 0 && (
-              <p className="pt-cat-note" style={{ marginTop: 14 }}>
-                {demos} of these {demos > 1 ? 'files are examples' : 'files is an example'}, marked{' '}
-                <span className="pt-demo-badge" style={{ marginLeft: 0 }}>demo</span> — they show
-                what a complete file looks like and can be removed at any time. The rest are real.
-              </p>
-            )}
-
             <div className="pt-liste">
               <div className="pt-liste-tete" aria-hidden="true">
                 <span>Athlete</span>
@@ -81,11 +72,6 @@ export default async function Sportifs({ params }: { params: Promise<{ org: stri
                   <span className="pt-cellule">
                     <span className="pt-nom">
                       {c.prenom} {c.nom}
-                      {c.reel ? (
-                        <span className="pt-reel">real file</span>
-                      ) : (
-                        <span className="pt-demo-badge">demo</span>
-                      )}
                     </span>
                     <span className="pt-sous pt-mono">{c.reference}</span>
                   </span>

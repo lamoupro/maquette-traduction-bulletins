@@ -72,11 +72,6 @@ export default async function DossierSportif({
           <div>
             <h1>
               {c.prenom} {c.nom}
-              {c.reel ? (
-                <span className="pt-reel">real file</span>
-              ) : (
-                <span className="pt-demo-badge">demo</span>
-              )}
             </h1>
             <p className="pt-fiche-meta">
               <span aria-hidden="true">{c.drapeau}</span> {c.pays} · {c.sport} · Entering{' '}
@@ -95,14 +90,6 @@ export default async function DossierSportif({
             full years of French secondary school, every term from Grade 9 to the Baccalauréat,
             across two schools. The records below are the actual documents, shown here with his
             permission.
-          </section>
-        )}
-
-        {!c.reel && (
-          <section className="pt-demo-note">
-            <strong>Sample record — demonstration only.</strong> Not a real athlete. It is here so{' '}
-            {ctx.org.nom} can see what a complete file looks like before there is a real one, and
-            it can be removed at any time.
           </section>
         )}
 

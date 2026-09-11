@@ -19,7 +19,11 @@ import { CANDIDATS, type Candidat, estClePartenaire, partenaire } from '@/lib/po
 
 export function sportifsDe(orgSlug: string): Candidat[] {
   if (!estClePartenaire(orgSlug)) return [];
-  return CANDIDATS.filter((c) => c.partenaire === orgSlug);
+  /* SEULEMENT LES DOSSIERS RÉELS. Les dossiers d'exemple restent dans les
+     données — la démonstration de démarchage s'en sert toujours, sous
+     /portal — mais ils n'ont plus rien à faire dans le portail d'un vrai
+     client : celui-ci ne doit contenir que ses propres athlètes. */
+  return CANDIDATS.filter((c) => c.partenaire === orgSlug && c.reel);
 }
 
 export function sportifDe(orgSlug: string, id: string): Candidat | undefined {
