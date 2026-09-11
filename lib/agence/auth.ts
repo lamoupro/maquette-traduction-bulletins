@@ -4,10 +4,13 @@ import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
 import Resend from 'next-auth/providers/resend';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { Resend as ClientResend } from 'resend';
+import { headers } from 'next/headers';
+import { eq } from 'drizzle-orm';
 import { db } from './db/client';
 import { accounts, authenticators, sessions, users, verificationTokens } from './db/schema';
 import { organisation } from './organisations';
 import { domaineCookieAgence } from './host';
+import { appareilLisible } from './appareil';
 
 /* L'authentification RÉELLE du portail agence.
 
@@ -62,14 +65,45 @@ if (!process.env.AUTH_URL && process.env.VERCEL_ENV === 'production') {
   process.env.AUTH_URL = 'https://protranslayte.com';
 }
 
+const adaptateurBase = DrizzleAdapter(db, {
+  usersTable: users,
+  accountsTable: accounts,
+  sessionsTable: sessions,
+  verificationTokensTable: verificationTokens,
+  authenticatorsTable: authenticators,
+});
+
+/* L'adaptateur, avec une seule chose en plus : le nom de l'appareil.
+
+   Une session ouverte par Google, Microsoft ou un lien magique passe par
+   l'adaptateur, qui ne connaît que l'utilisateur — pas la requête. On note
+   donc l'appareil juste après la création, depuis les en-têtes de la requête
+   en cours. La session par passkey, elle, est posée à la main et note déjà le
+   sien (voir lib/agence/session.ts).
+
+   Si ça échoue, la session reste valable : savoir depuis quel navigateur
+   quelqu'un s'est connecté est un confort, pas une condition d'accès. */
+const adaptateur: typeof adaptateurBase = {
+  ...adaptateurBase,
+  async createSession(donnees) {
+    const session = await adaptateurBase.createSession!(donnees);
+    try {
+      const nom = appareilLisible((await headers()).get('user-agent'));
+      if (nom) {
+        await db
+          .update(sessions)
+          .set({ userAgent: nom })
+          .where(eq(sessions.sessionToken, session.sessionToken));
+      }
+    } catch {
+      // hors contexte de requête : rien à noter, rien à casser
+    }
+    return session;
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-    authenticatorsTable: authenticators,
-  }),
+  adapter: adaptateur,
 
   /* Sous /api/agence-auth, et pas /api/auth par défaut : ce nom générique
      aurait pu laisser croire qu'il couvre aussi /admin ou la démo. Il ne
@@ -132,6 +166,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const resendClient = new ClientResend(process.env.RESEND_API_KEY);
         const org = await organisation({ parEmail: adresse });
         const nomOrg = org?.nom ?? 'your organisation';
+
+        /* ---------- Pourquoi on n'envoie PAS l'adresse d'Auth.js telle quelle ----------
+
+           Le jeton est à usage unique, et il est consommé par la PREMIÈRE
+           visite — pas par le premier humain. Or un lien qui circule est visité
+           par des machines avant de l'être par quelqu'un : WhatsApp le charge
+           pour fabriquer son aperçu, Outlook le fait passer par Safe Links,
+           les antivirus de messagerie le dépouillent. Quand la personne clique
+           enfin, le jeton est déjà mort, et elle reçoit une erreur alors
+           qu'elle n'a rien fait de travers. Constaté en test réel, en
+           transférant un lien par WhatsApp vers un ordinateur.
+
+           On envoie donc l'adresse d'un écran à NOUS, qui ne consomme rien en
+           se chargeant et porte un bouton. Un aspirateur de lien récupère du
+           HTML et repart ; seul un vrai clic déclenche l'échange du jeton.
+           Le lien reste à usage unique, ce qui est exactement ce qu'on veut :
+           le problème n'était pas sa sévérité, mais qui le déclenchait. */
+        const ouvrir = new URL('/agence/connexion/ouvrir', url);
+        ouvrir.searchParams.set('u', url);
+        if (org) ouvrir.searchParams.set('o', org.slug);
+        const lien = ouvrir.toString();
         const { error } = await resendClient.emails.send({
           from: provider.from!,
           to: adresse,
@@ -144,8 +199,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
              servi à rien. Le lien lui-même reste protégé (dix minutes, usage
              unique) : c'est sans risque de l'ouvrir ailleurs que dans l'appli
              qui l'a reçu. */
-          text: `Open this link to sign in to the ${nomOrg} document portal:\n\n${url}\n\nTip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.\n\nThis link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.`,
-          html: `<p>Open this link to sign in to the <strong>${nomOrg}</strong> document portal:</p><p><a href="${url}">${url}</a></p><p style="color:#666;font-size:13px">Tip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.</p><p style="color:#666;font-size:13px">This link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.</p>`,
+          text: `Open this link to sign in to the ${nomOrg} document portal:\n\n${lien}\n\nTip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.\n\nThis link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.`,
+          html: `<p>Open this link to sign in to the <strong>${nomOrg}</strong> document portal:</p><p><a href="${lien}">${lien}</a></p><p style="color:#666;font-size:13px">Tip: open it in Safari or Chrome rather than inside your mail app's built-in browser — that way you'll stay signed in for 30 days instead of only until you close the mail app.</p><p style="color:#666;font-size:13px">This link expires in 10 minutes and can be used once. If you didn't request it, ignore this message.</p>`,
         });
         if (error) throw new Error(`Resend: ${error.message}`);
       },
