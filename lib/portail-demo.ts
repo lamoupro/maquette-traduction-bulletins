@@ -91,7 +91,7 @@ export type Livraison = {
   livreLe: string;
 };
 
-export type ClePartenaire = 'trackhouse' | 'towson';
+export type ClePartenaire = 'trackhouse' | 'towson' | 'sportusa';
 
 export type Candidat = {
   id: string;
@@ -171,6 +171,27 @@ export const PARTENAIRES: Record<ClePartenaire, Partenaire> = {
        faire dans le dossier d'un coureur de fond. */
     entraineur: { nom: 'Coach Jonathan Alexis', perimetre: 'Sprints', titre: 'Sprints package' },
   },
+  sportusa: {
+    cle: 'sportusa',
+    nom: 'SportUSA',
+    genre: 'agence',
+    metier: 'US college sports scholarship specialists',
+    ville: 'United Kingdom',
+    domaine: 'sportusa.co.uk',
+    /* Le logo officiel, repris de leur propre site. Rouge et marine sur fond
+       transparent, avec une accroche en NOIR sous le lettrage : c'est elle
+       qui commande l'en-tête clair plus bas — sur un fond sombre, cette
+       ligne disparaîtrait purement et simplement. */
+    logo: '/portal/logo/sportusa.png',
+    logoLargeur: 500,
+    logoHauteur: 147,
+    responsable: 'Recruitment team',
+    suivis: 'athletes',
+    vueProprietaire: 'Agency',
+    /* Une agence britannique place dans tous les sports : le périmètre d'un
+       entraîneur abonné est donc la DISCIPLINE, pas un groupe d'épreuves. */
+    entraineur: { nom: 'Coach Daniel Hart', perimetre: 'Tennis', titre: 'Tennis package' },
+  },
   towson: {
     cle: 'towson',
     nom: 'Towson University',
@@ -195,7 +216,7 @@ export const PARTENAIRES: Record<ClePartenaire, Partenaire> = {
 export const CLE_DEFAUT: ClePartenaire = 'trackhouse';
 
 export const estClePartenaire = (v: string | undefined | null): v is ClePartenaire =>
-  v === 'trackhouse' || v === 'towson';
+  v === 'trackhouse' || v === 'towson' || v === 'sportusa';
 
 export const partenaire = (cle: string | undefined | null): Partenaire =>
   PARTENAIRES[estClePartenaire(cle) ? cle : CLE_DEFAUT];
@@ -260,6 +281,10 @@ const TRIMESTRES: Exigence[] = [
 
 const EXIGENCES_PAR_PARTENAIRE: Record<ClePartenaire, Exigence[]> = {
   trackhouse: TRIMESTRES,
+  /* Même exigence que Trackhouse : ce n'est pas l'agence qui décide de la
+     liste, c'est la NCAA. Deux agences qui placent dans le même championnat
+     attendent exactement les mêmes pièces. */
+  sportusa: TRIMESTRES,
   towson: [
     aca('Grade 10 transcript'),
     aca('Grade 11 transcript'),
@@ -622,6 +647,126 @@ export const CANDIDATS: Candidat[] = [
       p('Secondary school diploma', 'Academic', 'missing'),
       p('National examination results', 'Academic', 'missing'),
     ],
+  },
+
+  /* ---------- SportUSA ----------
+
+     Une agence britannique qui place dans tous les sports, et dont le vivier
+     vient de toute l'Europe : c'est le COUPLE DE LANGUES qui structure sa
+     liste, là où Trackhouse la range par groupe d'épreuves.
+
+     LE PREMIER DOSSIER EST UN VRAI, ET IL EST ANONYMISÉ. Il reprend la
+     structure exacte d'un cursus livré pour de bon — quatre années, treize
+     pièces, deux livraisons certifiées à trois semaines d'écart — mais ni le
+     nom ni les documents de l'intéressé n'y figurent : les pièces sont
+     composées à la demande, comme pour les dossiers inventés.
+
+     Montrer le dossier nominatif d'un client à une AUTRE agence serait
+     exactement ce qu'une agence craint de nous. L'anonymat n'est pas une
+     précaution ici, c'est l'argument. */
+  {
+    id: 'su-anonyme',
+    partenaire: 'sportusa',
+    prenom: 'P.',
+    nom: 'F.',
+    pays: 'France',
+    drapeau: '🇫🇷',
+    sport: 'French → English',
+    entree: 'Fall 2026',
+    reference: 'PT-260907-8X5T',
+    livraisons: [
+      {
+        cle: 'PT-260827-0RIT',
+        commandes: ['PT-260827-AASU', 'PT-260827-0RIT'],
+        couverture: 'Grades 10 to 12 and the Baccalauréat',
+        livreLe: '2026-08-28',
+      },
+      {
+        cle: 'PT-260907-8X5T',
+        commandes: ['PT-260907-8X5T'],
+        couverture: 'Grade 9',
+        livreLe: '2026-09-08',
+      },
+    ],
+    reel: true,
+    pieces: TRIMESTRES.map((e, i) => ({
+      requirement: e.requirement,
+      annee: e.annee,
+      categorie: 'Academic' as const,
+      etat: 'delivered' as const,
+      livraison: i < 3 ? 'PT-260907-8X5T' : 'PT-260827-0RIT',
+      original: {
+        nom: `${e.requirement.replace(/—/g, '-')}.pdf`,
+        pages: 2,
+        recuLe: i < 3 ? '2026-09-07' : '2026-08-27',
+      },
+      traduction: {
+        nom: `${e.requirement.replace(/—/g, '-')} - certified translation.pdf`,
+        pages: 2,
+        livreLe: i < 3 ? '2026-09-08' : '2026-08-28',
+      },
+    })),
+  },
+  {
+    id: 'su-lehmann',
+    partenaire: 'sportusa',
+    prenom: 'Jonas',
+    nom: 'Lehmann',
+    pays: 'Germany',
+    drapeau: '🇩🇪',
+    sport: 'German → English',
+    entree: 'Fall 2027',
+    reference: 'PT-260910-4KDM',
+    livraisons: envoiSimple('PT-260910-4KDM', '2026-09-11'),
+    pieces: T.map((e, i) =>
+      inv(e, i < 9 ? 'delivered' : i < 11 ? 'translating' : 'missing', 'PT-260910-4KDM',
+          i < 11 ? `Zeugnis Klasse ${9 + Math.floor(i / 3)} Halbjahr ${(i % 3) + 1}` : undefined),
+    ),
+  },
+  {
+    id: 'su-ferrer',
+    partenaire: 'sportusa',
+    prenom: 'Lucía',
+    nom: 'Ferrer',
+    pays: 'Spain',
+    drapeau: '🇪🇸',
+    sport: 'Spanish → English',
+    entree: 'Fall 2027',
+    reference: 'PT-260909-2QWP',
+    livraisons: envoiSimple('PT-260909-2QWP', '2026-09-10'),
+    pieces: T.map((e, i) => inv(e, 'delivered', 'PT-260909-2QWP', `Boletín ${1 + i}`)),
+  },
+  {
+    id: 'su-duarte',
+    partenaire: 'sportusa',
+    prenom: 'Matheus',
+    nom: 'Duarte',
+    pays: 'Brazil',
+    drapeau: '🇧🇷',
+    sport: 'Portuguese → English',
+    entree: 'Spring 2027',
+    reference: 'PT-260911-6RTX',
+    livraisons: envoiSimple('PT-260911-6RTX', '2026-09-12'),
+    pieces: T.map((e, i) =>
+      inv(e, i < 6 ? 'delivered' : i < 8 ? 'received' : 'missing', 'PT-260911-6RTX',
+          i < 8 ? `Histórico escolar ${1 + i}` : undefined),
+    ),
+  },
+  {
+    id: 'su-rossi',
+    partenaire: 'sportusa',
+    prenom: 'Giulia',
+    nom: 'Rossi',
+    pays: 'Italy',
+    drapeau: '🇮🇹',
+    sport: 'Italian → English',
+    entree: 'Fall 2027',
+    reference: 'PT-260908-9LMC',
+    livraisons: envoiSimple('PT-260908-9LMC', '2026-09-09'),
+    pieces: T.map((e, i) =>
+      inv(e, i < 4 ? 'delivered' : i < 5 ? 'translating' : 'missing', 'PT-260908-9LMC',
+          i < 5 ? `Pagella ${1 + i}` : undefined),
+    ),
   },
 ];
 

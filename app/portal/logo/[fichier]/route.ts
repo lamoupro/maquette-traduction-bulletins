@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 const LOGOS: Record<string, { chemin: string; type: string }> = {
   'trackhouse.png': { chemin: 'logos/trackhouse-monogramme.png', type: 'image/png' },
   'towson.png': { chemin: 'logos/towson-university-logo-couleurs.png', type: 'image/png' },
+  'sportusa.png': { chemin: 'logos/sportusa-logo.png', type: 'image/png' },
 };
 
 export async function GET(_requete: Request, { params }: { params: Promise<{ fichier: string }> }) {

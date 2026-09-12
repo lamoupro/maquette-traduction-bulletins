@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { COOKIE_DEMO, DEMO_JOURS, demoConfiguree, egal, empreinteDemo } from '@/lib/auth';
+import { COOKIE_ORG, estClePartenaire } from '@/lib/portail-demo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,7 +17,8 @@ export const dynamic = 'force-dynamic';
    ne reste pas lisible à l'écran pendant une présentation. */
 
 export async function GET(requete: Request) {
-  const fournie = new URL(requete.url).searchParams.get('cle') ?? '';
+  const params = new URL(requete.url).searchParams;
+  const fournie = params.get('cle') ?? '';
 
   if (!demoConfiguree()) {
     return NextResponse.json(
@@ -35,6 +37,27 @@ export async function GET(requete: Request) {
     path: '/portal',
     maxAge: DEMO_JOURS * 24 * 60 * 60,
   });
+
+  /* « &org=… » ouvre directement sur le bon partenaire.
+
+     Sans ça, un lien envoyé à une agence tombe sur les couleurs de la
+     précédente — celles d'un CONCURRENT, la plupart du temps. On pose donc
+     aussi la préférence d'affichage, et le lien devient propre à la personne
+     à qui on l'envoie. La bascule du bandeau reste là pour passer de l'une à
+     l'autre pendant une présentation. */
+  const org = params.get('org');
+  if (estClePartenaire(org)) {
+    /* MÊME CHEMIN que celui posé par le sélecteur du bandeau (BasculeOrg) :
+       deux cookies de même nom sur des chemins différents coexistent, et
+       c'est le plus précis qui gagne. Les poser ailleurs ferait que le lien
+       et le sélecteur se contrediraient en silence. */
+    (await cookies()).set(COOKIE_ORG, org, {
+      httpOnly: false,
+      sameSite: 'lax',
+      path: '/portal',
+      maxAge: DEMO_JOURS * 24 * 60 * 60,
+    });
+  }
 
   return NextResponse.redirect(new URL('/portal', requete.url));
 }

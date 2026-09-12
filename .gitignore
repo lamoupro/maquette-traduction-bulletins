@@ -13,3 +13,6 @@ public/demo-towson/
 # Maquettes de démarchage : marques et dossiers de tiers, jamais en ligne.
 public/demo-trackhouse/
 donnees-demo/
+
+# Marque d'un tiers, réunie ici pour lui montrer sa propre maquette.
+public/demo-sportusa/

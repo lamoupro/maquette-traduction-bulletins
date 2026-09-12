@@ -126,6 +126,69 @@
 .pt.org-trackhouse.est-partenaire .pt-marque { color: #8C857C; }
 .pt.org-trackhouse.est-partenaire .pt-marque b { color: var(--pt-p-signature); }
 
+/* ---------- SPORTUSA ----------
+
+   Relevé sur leur propre site, pas deviné :
+
+     Rouge        #B53B45   le lettrage « SPORT » et leurs boutons d'appel
+     Marine       #363180   le lettrage « USA » et la vague du logo
+     Marine foncé #221E56   leurs titres
+     Violet       #2F2B52   le fond de leurs sections sombres
+
+   LEUR ROUGE PORTE DU TEXTE, et c'est ce qui les distingue de Trackhouse.
+   #B53B45 donne 5,31:1 sur le papier clair et 5,71:1 en blanc dessus : il
+   peut donc servir à la fois d'aplat, de lien et de fond de bouton, là où
+   l'orange de Trackhouse imposait de tenir deux teintes séparées. Une seule
+   couleur d'accent suffit ici, et la page y gagne en netteté.
+
+   L'EN-TÊTE RESTE CLAIR, pour la même raison que chez Towson mais par un
+   autre chemin : leur logo porte une accroche — « Sport Scholarship
+   Specialists » — écrite en NOIR sous le lettrage. Sur un fond sombre, cette
+   ligne disparaîtrait, et on afficherait un logo amputé à des gens qui
+   connaissent le leur par cœur.
+
+   Le papier tire vers le froid, jamais vers le chaud : leur identité est
+   bleu-rouge, et un blanc cassé jaune y ferait tache. */
+.pt.org-sportusa.est-partenaire {
+  --pt-p-encre: #221E56;
+  --pt-p-signature: #B53B45;
+  --pt-p-fond: #FFFFFF;
+
+  --pt-vif: #B53B45;
+  --pt-accent: #B53B45;
+  --pt-accent-tint: #F7E9EA;
+  --pt-vif-sombre: #9B2F38;
+  --pt-bouton-texte: #fff;
+
+  --pt-ground: #F5F4F9;
+  --pt-surface: #FFFFFF;
+  --pt-sunk: #FAF9FC;
+  --pt-ink: #221E56;
+  --pt-soft: #565273;
+  --pt-faint: #8C89A5;
+  --pt-rule: #E3E1EC;
+
+  /* Les états gardent leur sens, refroidis d'un cran pour rester dans la
+     famille bleu-rouge de la marque. */
+  --pt-ok: #1F6B4D;
+  --pt-ok-tint: #E7F1EC;
+  --pt-wait: #7A5A1E;
+  --pt-wait-tint: #F6F1E4;
+  --pt-miss: #A32F3A;
+  --pt-miss-tint: #F9EBEC;
+}
+
+/* En-tête clair, filet à leur rouge — le même geste que le trait rouge qui
+   souligne leur navigation. */
+.pt.org-sportusa.est-partenaire .pt-tete {
+  background: var(--pt-surface);
+  border-bottom: 3px solid var(--pt-p-signature);
+}
+.pt.org-sportusa.est-partenaire .pt-marque b { color: var(--pt-accent); }
+/* Leur logo est large et bas, comme celui de Towson : à hauteur égale il
+   pèserait deux fois plus que notre nom posé à côté. */
+.pt.org-sportusa .pt-logo-ecole { height: 26px; }
+
 /* ---------- TOWSON UNIVERSITY ----------
 
    Couleurs officielles, relevées dans leur charte de marque (six teintes de
