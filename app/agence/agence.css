@@ -542,3 +542,27 @@
 .pt-cat-note {
   margin: -4px 0 12px; font-size: 0.83rem; color: var(--pt-soft); max-width: 68ch;
 }
+
+/* ---------- Ce qui s'ajoute après la livraison ---------- */
+
+/* Le rappel déjà parti. Ton neutre volontairement : ce n'est pas une alerte,
+   c'est une information qui évite un geste en double. */
+.pt-deja {
+  margin: 0 0 12px; font-size: 0.86rem; color: var(--pt-soft);
+  background: var(--pt-surface); border: 1px solid var(--pt-rule);
+  border-radius: 6px; padding: 8px 12px;
+}
+.pt-deja strong { color: var(--pt-ink); }
+
+.pt-ajout {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--pt-rule);
+}
+.pt-ajout h3 { font-size: 0.92rem; margin: 0 0 4px; }
+.pt-ajout > p { margin: 0 0 12px; font-size: 0.84rem; color: var(--pt-soft); max-width: 62ch; }
+.pt-ajout-ligne {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 0; border-bottom: 1px solid var(--pt-rule);
+}
+.pt-ajout-ligne:last-child { border-bottom: none; }
+.pt-ajout-nom { font-size: 0.86rem; font-weight: 600; min-width: 16ch; }
+.pt-ajout-ligne input[type='file'] { font-size: 0.8rem; max-width: 100%; }

@@ -12,8 +12,10 @@ import {
 } from '@/lib/portail-demo';
 import DocumentPaire from '@/components/portail/DocumentPaire';
 import Recuperer from '@/components/portail/Recuperer';
-import RelanceWhatsApp from '@/components/portail/RelanceWhatsApp';
 import EnTete from '../../EnTete';
+import Relances from './Relances';
+import { ajoutsDe, dernierRappel, fusionnerAjouts } from '@/lib/agence/suivi';
+import { noterRappelEnvoye, retirerAjout } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,8 +48,18 @@ export default async function DossierSportif({
   /* Retrouvé DANS le vivier de cette organisation, jamais dans l'ensemble des
      dossiers : une liste filtrée dont les adresses restent ouvertes ne
      restreint rien, il suffirait de connaître l'identifiant. */
-  const c = sportifDe(slug, id);
-  if (!c) notFound();
+  const brut = sportifDe(slug, id);
+  if (!brut) notFound();
+
+  /* Le dossier tel qu'il est VRAIMENT : celui du fichier, plus ce qui a été
+     ajouté à la main depuis. Une pièce ajoutée cesse de manquer — voir
+     lib/agence/suivi.ts. */
+  const [ajouts, rappel] = await Promise.all([
+    ajoutsDe(ctx.org.id, id),
+    dernierRappel(ctx.org.id, id),
+  ]);
+  const c = fusionnerAjouts(brut, ajouts);
+  const ajoutePour = new Map(ajouts.map((x) => [x.requirement, x]));
 
   const a = avancement(c);
   const annees = anneesDuDossier(c);
@@ -91,18 +103,50 @@ export default async function DossierSportif({
                 <li key={m.requirement}>{m.requirement}</li>
               ))}
             </ul>
-            <div className="pt-relance">
-              <RelanceWhatsApp
-                texte={messageRelance(c, ctx.org.nom)}
-                telephone={process.env.DEMO_TELEPHONE?.replace(/\D/g, '') || undefined}
-                enfants="Remind on WhatsApp"
-              />
-              <a
-                className="pt-bouton"
-                href={lienEmail(c, ctx.org.nom, messageRelance(c, ctx.org.nom))}
-              >
-                Remind by email
-              </a>
+
+            {/* Ce qu'on a déjà fait, avant de proposer de le refaire : trois
+                personnes d'une même agence cliquent le même bouton sans se
+                concerter, et l'étudiant reçoit quatre fois le même message. */}
+            {rappel && (
+              <p className="pt-deja">
+                A reminder was already sent {rappel.canal === 'whatsapp' ? 'on WhatsApp' : 'by email'} on{' '}
+                <strong>{rappel.envoyeLe.toISOString().slice(0, 10)}</strong> by {rappel.envoyePar}.
+              </p>
+            )}
+
+            <Relances
+              texte={messageRelance(c, ctx.org.nom)}
+              telephone={process.env.DEMO_TELEPHONE?.replace(/\D/g, '') || undefined}
+              adresseEmail={lienEmail(c, ctx.org.nom, messageRelance(c, ctx.org.nom))}
+              onRappel={noterRappelEnvoye.bind(null, slug, c.id)}
+            />
+
+            {/* Le cas où l'étudiant a fait traduire ailleurs : le document
+                existe, il n'est simplement pas passé par nous. On le range
+                dans le dossier plutôt que de laisser une ligne rouge qui ne
+                se comblera jamais. */}
+            <div className="pt-ajout">
+              <h3>Already have one of these?</h3>
+              <p>
+                If a record was translated elsewhere, add it here and it stops showing as missing.
+                It stays out of the certified document — our certificate only covers what we
+                translated ourselves.
+              </p>
+              {a.manquantes.map((m) => (
+                <form
+                  key={m.requirement}
+                  action={ctx.lien('/ajouter')}
+                  method="post"
+                  encType="multipart/form-data"
+                  className="pt-ajout-ligne"
+                >
+                  <input type="hidden" name="sportif" value={c.id} />
+                  <input type="hidden" name="requirement" value={m.requirement} />
+                  <span className="pt-ajout-nom">{m.requirement}</span>
+                  <input type="file" name="fichier" accept=".pdf,.jpg,.jpeg,.png" required />
+                  <button type="submit" className="pt-bouton">Add</button>
+                </form>
+              ))}
             </div>
           </section>
         )}
@@ -154,6 +198,27 @@ export default async function DossierSportif({
                 <span className={`pt-etat ${et.ton}`}>{et.texte}</span>
               </div>
 
+              {ajoutePour.get(an.pieces[0]?.requirement ?? '') && (
+                <div className="pt-volet vide" style={{ borderTop: '1px solid var(--pt-rule)' }}>
+                  <span className="pt-volet-lab">Added by {ctx.org.nom}</span>
+                  Translated elsewhere, added on{' '}
+                  {ajoutePour.get(an.pieces[0].requirement)!.ajouteLe.toISOString().slice(0, 10)} by{' '}
+                  {ajoutePour.get(an.pieces[0].requirement)!.ajoutePar} — not covered by our
+                  certificate.
+                  <form
+                    action={retirerAjout.bind(
+                      null,
+                      slug,
+                      c.id,
+                      ajoutePour.get(an.pieces[0].requirement)!.id,
+                    )}
+                    style={{ marginTop: 8 }}
+                  >
+                    <button type="submit" className="pt-bouton">Remove this document</button>
+                  </form>
+                </div>
+              )}
+
               {an.pagesOriginal > 0 && (
                 <DocumentPaire
                   original={{
@@ -173,9 +238,11 @@ export default async function DossierSportif({
                       : undefined
                   }
                   videTraduction={
-                    an.rienATraduire
-                      ? 'No translation needed — these records were issued in English.'
-                      : 'Being translated — usually ready within 48 hours.'
+                    ajoutePour.get(an.pieces[0]?.requirement ?? '')
+                      ? 'Translated elsewhere — this copy was added to the file, not produced by us.'
+                      : an.rienATraduire
+                        ? 'No translation needed — these records were issued in English.'
+                        : 'Being translated — usually ready within 48 hours.'
                   }
                 />
               )}

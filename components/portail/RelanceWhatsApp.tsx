@@ -35,17 +35,24 @@ export default function RelanceWhatsApp({
   texte,
   telephone,
   enfants,
+  avant,
 }: {
   texte: string;
   /** Chiffres uniquement, indicatif compris, sans « + » ni espaces. */
   telephone?: string;
   enfants: React.ReactNode;
+  /* Appelé juste avant d'ouvrir WhatsApp — le portail réel s'en sert pour
+     noter qu'une relance est partie. On n'attend pas sa réponse : le clic
+     doit ouvrir l'application tout de suite, sinon iOS le traite comme une
+     fenêtre non sollicitée et la bloque. */
+  avant?: () => void;
 }) {
   const minuteur = useRef<ReturnType<typeof setTimeout> | null>(null);
   const encode = encodeURIComponent(texte);
   const numero = telephone ? `phone=${telephone}&` : '';
 
   function tenter() {
+    avant?.();
     const annuler = () => {
       if (minuteur.current) clearTimeout(minuteur.current);
       minuteur.current = null;

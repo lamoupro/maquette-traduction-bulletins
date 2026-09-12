@@ -264,3 +264,56 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
   membres: many(membres),
   invitations: many(invitations),
 }));
+
+/* ---------- Ce qui arrive APRÈS la livraison ----------
+
+   Deux tables, une même raison d'être : un dossier n'est pas figé le jour où
+   on l'a livré. Une pièce manque, on relance l'étudiant ; une pièce a été
+   traduite ailleurs, on la range quand même dans le dossier. Rien de tout ça
+   n'existait, et c'est ce qui obligeait à retenir de tête qui avait déjà été
+   relancé, et ce qui manquait vraiment. */
+
+export const canalRappelEnum = pgEnum('canal_rappel', ['email', 'whatsapp']);
+
+/* Les relances déjà parties. Notées pour une seule raison : éviter qu'un
+   étudiant reçoive quatre fois le même message parce que trois personnes de
+   l'agence ont cliqué le même bouton sans se concerter. */
+export const rappels = pgTable('rappel', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organisationId: text('organisationId')
+    .notNull()
+    .references(() => organisations.id, { onDelete: 'cascade' }),
+  /* L'identifiant du sportif tel qu'il existe aujourd'hui — une chaîne, pas
+     une clé étrangère : les sportifs ne sont pas encore en base. Le jour où
+     ils y seront, cette colonne deviendra une référence. */
+  sportifId: text('sportifId').notNull(),
+  canal: canalRappelEnum('canal').notNull(),
+  envoyeLe: timestamp('envoyeLe', { mode: 'date' }).notNull().defaultNow(),
+  envoyePar: text('envoyePar').notNull(),
+});
+
+/* Une pièce ajoutée à la main, parce qu'elle n'est pas passée par nous.
+
+   Le cas qui l'a fait naître : un étudiant avait déjà fait traduire son
+   diplôme ailleurs avant de nous confier le reste. La pièce manquait au
+   dossier sans manquer à l'étudiant.
+
+   ELLE N'ENTRE JAMAIS DANS LE DOCUMENT CERTIFIÉ. Notre certificat atteste que
+   la documentation qui suit a été traduite par nous ; y glisser une traduction
+   faite ailleurs rendrait cette attestation fausse. Le portail la range dans
+   le dossier, l'affiche, la laisse consulter — et s'arrête là. */
+export const piecesAjoutees = pgTable('piece_ajoutee', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organisationId: text('organisationId')
+    .notNull()
+    .references(() => organisations.id, { onDelete: 'cascade' }),
+  sportifId: text('sportifId').notNull(),
+  /** L'intitulé exact de la pièce attendue, tel qu'il figure dans le dossier. */
+  requirement: text('requirement').notNull(),
+  /** Le chemin dans le magasin Blob privé — jamais une adresse publique. */
+  chemin: text('chemin').notNull(),
+  nomFichier: text('nomFichier').notNull(),
+  pages: integer('pages'),
+  ajouteLe: timestamp('ajouteLe', { mode: 'date' }).notNull().defaultNow(),
+  ajoutePar: text('ajoutePar').notNull(),
+});
