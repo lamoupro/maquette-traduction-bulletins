@@ -83,16 +83,6 @@ export default async function DossierSportif({
           </div>
         </div>
 
-        {c.reel && (
-          <section className="pt-reel-note">
-            <strong>This is a real delivered file.</strong> {c.prenom} {c.nom} ordered through
-            protranslayte.com and received these translations in August and September 2026 — four
-            full years of French secondary school, every term from Grade 9 to the Baccalauréat,
-            across two schools. The records below are the actual documents, shown here with his
-            permission.
-          </section>
-        )}
-
         {a.manquantes.length > 0 && (
           <section className="pt-manquant">
             <h2>Waiting on the student</h2>

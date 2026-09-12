@@ -52,7 +52,15 @@ export async function GET(requete: Request) {
     return NextResponse.json({ erreur: 'Livraison inconnue.' }, { status: 404 });
   }
 
-  const assemble = await construireLivraison(c, envoi, pa.nom);
+  /* La démonstration, elle, DOIT porter son bandeau : un prospect qui
+     enregistre ce PDF ne doit jamais pouvoir le confondre avec une pièce
+     réelle. Un dossier inventé se signale comme tel ; un dossier réel montré
+     en démonstration dit ce qui est vrai — ces pièces sont authentiques, et
+     montrées avec l'accord de l'intéressé. */
+  const assemble = await construireLivraison(c, envoi, pa.nom,
+    c.reel
+      ? "Genuine records, reassembled for demonstration with the student's permission."
+      : 'SAMPLE FILE - DEMONSTRATION ONLY. Not a student record.');
   if (!assemble) {
     return NextResponse.json(
       { erreur: "Aucune traduction n'est encore certifiée pour cette livraison." },

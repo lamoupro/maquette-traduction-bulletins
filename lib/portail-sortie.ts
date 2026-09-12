@@ -123,6 +123,14 @@ export async function construireLivraison(
   c: Candidat,
   envoi: Livraison,
   etablissement: string,
+  /* Le bandeau porté par la première et la dernière page.
+
+     Il n'a de sens que dans la DÉMONSTRATION, où il faut dire à un prospect
+     ce qu'il a sous les yeux. Sur un document livré à un vrai client, il est
+     au mieux incompréhensible, au pire nuisible : un registrar américain qui
+     lit « for demonstration » sur une pièce certifiée a toutes les raisons de
+     la rejeter. Le portail réel ne passe donc rien ici, et c'est volontaire. */
+  mention?: string,
 ): Promise<{ pdf: Buffer; nom: string } | null> {
   const contenu = await piecesDe(c, envoi);
   if (contenu.length === 0) return null;
@@ -136,13 +144,7 @@ export async function construireLivraison(
     emisLe: envoi.livreLe,
     pieces: contenu,
     certificat: CERTIFICAT,
-    /* Un dossier inventé se signale comme tel. Un dossier réel ne peut pas
-       porter « not a student record » sans mentir : il en est un. On dit
-       alors ce qui est vrai — ces pièces sont authentiques, et montrées avec
-       l'accord de l'intéressé. */
-    demonstration: c.reel
-      ? "Genuine records, reassembled for demonstration with the student's permission."
-      : 'SAMPLE FILE - DEMONSTRATION ONLY. Not a student record.',
+    demonstration: mention,
   });
 
   const nom = nomSur(`${etablissement} - ${c.prenom} ${c.nom} - ${envoi.couverture} - ${envoi.cle}.pdf`);

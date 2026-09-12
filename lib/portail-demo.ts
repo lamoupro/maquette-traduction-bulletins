@@ -395,6 +395,17 @@ const FOLIKOE: Candidat = {
     lycee(11, 'Grade 12 — Term 2 report', 'Grade 12', 'Bulletin TG1 2023-2024 T2', 1, 2),
     lycee(12, 'Grade 12 — Term 3 report', 'Grade 12', 'Bulletin TG1 2023-2024 T3', 1, 2),
     lycee(13, 'National examination results', 'National examination results', 'Releve de notes Baccalaureat 2024', 1, 2),
+    /* Le DIPLÔME du bac, lui, n'est pas passé par nous : Prince l'a fait
+       traduire ailleurs avant de nous confier le reste. Il manque donc à ce
+       dossier, et le portail doit le dire — un dossier annoncé complet alors
+       qu'il lui manque une pièce est pire qu'un dossier incomplet assumé.
+       Il se comblera le jour où on ajoutera le document à la main. */
+    {
+      requirement: 'Secondary school diploma',
+      annee: 'Secondary school diploma',
+      categorie: 'Academic',
+      etat: 'missing',
+    },
   ],
 };
 
