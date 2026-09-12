@@ -48,7 +48,7 @@ export type Eleve = {
   prenom: string;
   nom: string;
   ncaa: InfosNcaa;
-  /** Ce que l'établissement doit envoyer, en clair. */
+  /** Ce que réunit le document livré, en clair. Une liste par défaut sinon. */
   pieces?: string[];
 };
 
@@ -86,10 +86,18 @@ function avecArticle(nom: string) {
    qui demande un service — pas celle d'une administration qui somme. */
 export function messageAuLycee(e: Eleve, etablissement?: string) {
   const naissance = dateLisible(e.ncaa.naissance);
-  const pieces = e.pieces?.length
-    ? e.pieces.map((p) => `   - ${p}`).join('\n')
-    : '   - mes bulletins scolaires de chaque année du lycée\n' +
-      '   - mon diplôme et mon relevé de notes du baccalauréat';
+  /* UN SEUL DOCUMENT, et c'est tout le raisonnement de ce message.
+
+     Nous livrons un PDF unique qui réunit le parcours entier — de la 3e au
+     baccalauréat, diplôme compris — chaque pièce suivie de sa traduction
+     certifiée. L'établissement n'a donc rien à rassembler, rien à choisir,
+     rien à scanner : il transmet la pièce jointe telle quelle. Une demande
+     qui tient en un geste est une demande qui aboutit ; une demande qui
+     suppose de retrouver huit bulletins dans un dossier d'archives attend
+     trois semaines, puis se perd. */
+  const contenu = e.pieces?.length
+    ? e.pieces.join(', ')
+    : 'mes bulletins de la 3e à la terminale, mon diplôme et mon relevé de notes du baccalauréat';
 
   return (
     `Madame, Monsieur,\n\n` +
@@ -98,9 +106,9 @@ export function messageAuLycee(e: Eleve, etablissement?: string) {
     `Je candidate dans une université américaine. L'organisme qui valide les dossiers scolaires, ` +
     `la NCAA Eligibility Center, exige que ce soit l'établissement lui-même qui lui transmette les ` +
     `documents : je n'ai pas le droit de les envoyer moi-même.\n\n` +
-    `Pourriez-vous envoyer un e-mail à ${ADRESSE_NCAA} en y joignant :\n` +
-    `${pieces}\n` +
-    `   - leur traduction anglaise certifiée, que je joins à ce message.\n\n` +
+    `Je joins à ce message un document PDF unique qui réunit ${contenu}, ` +
+    `chaque pièce étant suivie de sa traduction anglaise certifiée.\n\n` +
+    `Pourriez-vous le transmettre tel quel, en pièce jointe, à ${ADRESSE_NCAA} ?\n\n` +
     `Deux points sur lesquels la NCAA est stricte, et qui font refuser l'envoi s'ils ne sont pas ` +
     `respectés :\n\n` +
     `   1. L'objet du message doit être exactement :\n` +

@@ -79,19 +79,32 @@ export default function EtapeNcaa({
     return (
       <div className="ncaa-bloc">
         <h2>Ce qu’il vous reste à faire</h2>
+
+        {/* L'ORDRE COMPTE, et il est répété plus bas en avertissement.
+            Un élève pressé qui envoie ce message avant d'avoir reçu son
+            document fait travailler son établissement pour rien — et un
+            secrétariat qu'on a déjà dérangé une fois répond moins vite la
+            seconde. */}
         <ol className="ncaa-etapes">
           <li>
-            <strong>Attendez nos traductions certifiées</strong> — elles arrivent sous 24 à 48&nbsp;h
-            par e-mail.
+            <strong>Attendez notre document</strong> — un seul PDF réunissant tout votre parcours,
+            de la 3<sup>e</sup> au baccalauréat, chaque pièce suivie de sa traduction certifiée.
           </li>
           <li>
-            <strong>Transférez-les à votre établissement</strong> avec le message ci-dessous.
+            <strong>Transférez-le à votre établissement</strong> avec le message ci-dessous, sans
+            rien y changer.
           </li>
           <li>
-            <strong>Votre établissement envoie le tout à la NCAA.</strong> Vous n’avez rien d’autre
-            à faire.
+            <strong>Votre établissement l’envoie à la NCAA.</strong> Vous n’avez rien d’autre à
+            faire.
           </li>
         </ol>
+
+        <p className="ncaa-avertissement">
+          <strong>N’envoyez ce message qu’une fois notre document reçu.</strong> Il ne contient
+          qu’une seule pièce jointe à transmettre : si vous écrivez avant, votre établissement
+          n’aura rien à envoyer.
+        </p>
 
         <div className="ncaa-message">
           <p className="ncaa-champ-lab">Objet</p>

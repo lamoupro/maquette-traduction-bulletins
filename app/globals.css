@@ -658,3 +658,9 @@
   .ncaa-message, .ncaa-message * { visibility: visible; }
   .ncaa-message { position: absolute; left: 0; top: 0; width: 100%; border: none; background: #fff; }
 }
+.ncaa-avertissement {
+  margin: 0 0 18px; padding: 12px 14px;
+  background: #FBF2E2; border-left: 3px solid #8A5A00; border-radius: 0 6px 6px 0;
+  font-size: 0.9rem; line-height: 1.55; color: #55647C;
+}
+.ncaa-avertissement strong { color: #10233C; }
