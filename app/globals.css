@@ -581,3 +581,80 @@
     display:block;font-size:0.7rem;color:var(--ink-soft);opacity:0.75;
     font-style:italic;margin-top:1px;
   }
+
+/* ---------- Étape NCAA, après paiement ----------
+
+   Sur la page de retour, qui utilise la feuille « legal ». Volontairement
+   sobre : c'est une démarche administrative, pas une offre. */
+
+.ncaa-invite {
+  margin: 28px 0; padding: 18px 20px;
+  background: #F7F9FC; border: 1px solid #DDE4EE; border-radius: 10px;
+}
+.ncaa-invite p { margin: 0 0 12px; font-size: 0.94rem; color: #55647C; }
+.ncaa-invite strong { color: #10233C; }
+
+.ncaa-bloc {
+  margin: 28px 0; padding: 22px 24px;
+  background: #fff; border: 1px solid #DDE4EE; border-radius: 10px;
+}
+.ncaa-bloc h2 { font-size: 1.08rem; margin: 0 0 6px; }
+.ncaa-intro { margin: 0 0 18px; font-size: 0.9rem; color: #55647C; }
+
+.ncaa-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.ncaa-grille label { display: block; }
+.ncaa-grille label.ncaa-large { grid-column: 1 / -1; }
+.ncaa-grille span {
+  display: block; font-size: 0.78rem; font-weight: 600; color: #55647C; margin-bottom: 5px;
+}
+.ncaa-grille input {
+  width: 100%; font: inherit; font-size: 0.94rem; padding: 10px 12px;
+  border: 1px solid #DDE4EE; border-radius: 7px; background: #F7F9FC; color: #10233C;
+}
+.ncaa-grille input:focus {
+  outline: none; border-color: #1359B8; background: #fff; box-shadow: 0 0 0 3px #E8F0FC;
+}
+@media (max-width: 560px) { .ncaa-grille { grid-template-columns: 1fr; } }
+
+.ncaa-bouton {
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-top: 16px; padding: 10px 18px; border-radius: 7px;
+  border: 1px solid #DDE4EE; background: #fff; color: #10233C;
+  font: inherit; font-size: 0.9rem; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+}
+.ncaa-bouton:hover { border-color: #1359B8; color: #1359B8; }
+.ncaa-bouton.ncaa-primaire { background: #1359B8; border-color: #1359B8; color: #fff; }
+.ncaa-bouton.ncaa-primaire:hover { background: #0E4695; color: #fff; }
+.ncaa-bouton[disabled] { opacity: 0.5; cursor: default; }
+
+.ncaa-etapes { margin: 0 0 20px; padding-left: 20px; font-size: 0.92rem; color: #55647C; }
+.ncaa-etapes li { margin-bottom: 7px; }
+.ncaa-etapes strong { color: #10233C; }
+
+.ncaa-message {
+  border: 1px solid #DDE4EE; border-radius: 8px; padding: 14px 16px; background: #F7F9FC;
+}
+.ncaa-champ-lab {
+  margin: 0 0 4px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: #8A99AE;
+}
+.ncaa-objet { margin: 0 0 14px; font-size: 0.9rem; font-weight: 600; }
+.ncaa-message pre {
+  margin: 0; white-space: pre-wrap; font-family: inherit;
+  font-size: 0.88rem; line-height: 1.6; color: #10233C;
+}
+.ncaa-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ncaa-note { margin: 14px 0 0; font-size: 0.82rem; color: #55647C; line-height: 1.55; }
+.ncaa-erreur {
+  margin: 14px 0 0; font-size: 0.86rem; color: #A32020;
+  background: #FBEBEA; border-radius: 6px; padding: 9px 12px;
+}
+
+/* À l'impression, seul le message compte : le reste de la page n'a rien à
+   faire sur une feuille qu'on dépose au secrétariat d'un lycée. */
+@media print {
+  body * { visibility: hidden; }
+  .ncaa-message, .ncaa-message * { visibility: visible; }
+  .ncaa-message { position: absolute; left: 0; top: 0; width: 100%; border: none; background: #fff; }
+}

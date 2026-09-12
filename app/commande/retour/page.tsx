@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { stripe, stripeConfigure } from '@/lib/stripe';
+import { lireFiche, stockageConfigure } from '@/lib/stockage';
 import Logo from '@/components/Logo';
 import NettoyerCommande from '@/components/NettoyerCommande';
+import EtapeNcaa from './EtapeNcaa';
+import { enregistrerNcaa } from './actions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
@@ -26,6 +29,11 @@ export default async function Retour({
   let reference: string | null = null;
   let email: string | null = null;
   let montant: number | null = null;
+  /* Le nom sert à écrire le message destiné à l'établissement. On le prend
+     dans la commande, et Stripe sert de repli quand le webhook n'a pas encore
+     écrit la fiche — quelques secondes, mais elles tombent exactement ici. */
+  let prenom = '';
+  let nom = '';
 
   if (session_id && stripeConfigure()) {
     try {
@@ -34,6 +42,22 @@ export default async function Retour({
       email = s.customer_details?.email ?? null;
       montant = (s.amount_total ?? 0) / 100;
       etat = s.payment_status === 'paid' ? 'paye' : 'en_cours';
+
+      const entier = (s.customer_details?.name ?? '').trim().split(/\s+/);
+      prenom = entier[0] ?? '';
+      nom = entier.slice(1).join(' ');
+
+      if (reference && stockageConfigure()) {
+        try {
+          const fiche = (await lireFiche(reference)) as
+            | { client?: { prenom?: string; nom?: string } }
+            | null;
+          if (fiche?.client?.prenom) prenom = fiche.client.prenom;
+          if (fiche?.client?.nom) nom = fiche.client.nom;
+        } catch {
+          // Fiche pas encore écrite : le repli Stripe suffit.
+        }
+      }
     } catch {
       etat = 'inconnu';
     }
@@ -89,6 +113,15 @@ export default async function Retour({
                   remboursement de 30 jours, sans justification.
                 </li>
               </ul>
+
+              {session_id && (
+                <EtapeNcaa
+                  sessionId={session_id}
+                  prenomInitial={prenom}
+                  nomInitial={nom}
+                  onEnregistrer={enregistrerNcaa}
+                />
+              )}
 
               <p>
                 Une question ? <a href="mailto:contact@protranslayte.com">contact@protranslayte.com</a>
