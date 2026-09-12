@@ -108,7 +108,7 @@ export function messageAuLycee(e: Eleve, etablissement?: string) {
     `documents : je n'ai pas le droit de les envoyer moi-même.\n\n` +
     `Je joins à ce message un document PDF unique qui réunit ${contenu}, ` +
     `chaque pièce étant suivie de sa traduction anglaise certifiée.\n\n` +
-    `Pourriez-vous le transmettre tel quel, en pièce jointe, à ${ADRESSE_NCAA} ?\n\n` +
+    `Pourriez-vous le transmettre en pièce jointe à ${ADRESSE_NCAA} ?\n\n` +
     `Deux points sur lesquels la NCAA est stricte, et qui font refuser l'envoi s'ils ne sont pas ` +
     `respectés :\n\n` +
     `   1. L'objet du message doit être exactement :\n` +
