@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { garde } from '@/lib/agence/garde';
 import { sportifsDe, vocabulaireDe } from '@/lib/agence/sportifs';
 import { avancement, exigences } from '@/lib/portail-demo';
-import { ajoutsParSportif, fusionnerAjouts } from '@/lib/agence/suivi';
+import { fusionnerReglees, regleesParSportif } from '@/lib/agence/suivi';
 import EnTete from './EnTete';
 
 export const dynamic = 'force-dynamic';
@@ -22,9 +22,9 @@ export default async function Sportifs({ params }: { params: Promise<{ org: stri
   /* Les pièces ajoutées à la main comptent ici aussi : une liste qui annonce
      « 1 document outstanding » sur un dossier que la fiche dit complet est
      pire que pas de compteur du tout. */
-  const ajouts = await ajoutsParSportif(ctx.org.id);
+  const reglees = await regleesParSportif(ctx.org.id);
   const lignes = sportifsDe(slug)
-    .map((c) => fusionnerAjouts(c, ajouts.get(c.id) ?? []))
+    .map((c) => fusionnerReglees(c, reglees.get(c.id) ?? []))
     .map((c) => ({ c, a: avancement(c) }))
     .sort((x, y) => rangs[x.a.resume.ton] - rangs[y.a.resume.ton]);
 

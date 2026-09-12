@@ -14,8 +14,9 @@ import DocumentPaire from '@/components/portail/DocumentPaire';
 import Recuperer from '@/components/portail/Recuperer';
 import EnTete from '../../EnTete';
 import Relances from './Relances';
-import { ajoutsDe, dernierRappel, fusionnerAjouts } from '@/lib/agence/suivi';
-import { noterRappelEnvoye, retirerAjout } from './actions';
+import { dernierRappel, fusionnerReglees, regleesDe } from '@/lib/agence/suivi';
+import { emailEtudiant } from '@/lib/agence/relance';
+import { cocherReglee, decocherReglee, relancerParEmail, relancerParSms } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,12 +55,17 @@ export default async function DossierSportif({
   /* Le dossier tel qu'il est VRAIMENT : celui du fichier, plus ce qui a été
      ajouté à la main depuis. Une pièce ajoutée cesse de manquer — voir
      lib/agence/suivi.ts. */
-  const [ajouts, rappel] = await Promise.all([
-    ajoutsDe(ctx.org.id, id),
+  const [reglees, rappel, adresseEtudiant] = await Promise.all([
+    regleesDe(ctx.org.id, id),
     dernierRappel(ctx.org.id, id),
+    /* Montrée à l'écran, et pas seulement utilisée au moment d'envoyer : on ne
+       demande pas à quelqu'un d'appuyer sur un bouton sans lui dire où part
+       le message. C'est aussi ce qui rend visible le cas où l'adresse manque,
+       avant de découvrir l'échec après coup. */
+    emailEtudiant(brut),
   ]);
-  const c = fusionnerAjouts(brut, ajouts);
-  const ajoutePour = new Map(ajouts.map((x) => [x.requirement, x]));
+  const c = fusionnerReglees(brut, reglees);
+  const regleePour = new Map(reglees.map((x) => [x.requirement, x]));
 
   const a = avancement(c);
   const annees = anneesDuDossier(c);
@@ -109,42 +115,48 @@ export default async function DossierSportif({
                 concerter, et l'étudiant reçoit quatre fois le même message. */}
             {rappel && (
               <p className="pt-deja">
-                A reminder was already sent {rappel.canal === 'whatsapp' ? 'on WhatsApp' : 'by email'} on{' '}
+                A reminder was already sent{' '}
+                {rappel.canal === 'email' ? 'by email' : rappel.canal === 'sms' ? 'by text message' : 'on WhatsApp'} on{' '}
                 <strong>{rappel.envoyeLe.toISOString().slice(0, 10)}</strong> by {rappel.envoyePar}.
               </p>
             )}
 
             <Relances
-              texte={messageRelance(c, ctx.org.nom)}
-              telephone={process.env.DEMO_TELEPHONE?.replace(/\D/g, '') || undefined}
-              adresseEmail={lienEmail(c, ctx.org.nom, messageRelance(c, ctx.org.nom))}
-              onRappel={noterRappelEnvoye.bind(null, slug, c.id)}
+              onEmail={relancerParEmail.bind(null, slug, c.id)}
+              onSms={relancerParSms.bind(null, slug, c.id)}
+              dejaEnvoye={Boolean(rappel)}
             />
 
-            {/* Le cas où l'étudiant a fait traduire ailleurs : le document
-                existe, il n'est simplement pas passé par nous. On le range
-                dans le dossier plutôt que de laisser une ligne rouge qui ne
-                se comblera jamais. */}
+            <p className="pt-relance-note">
+              {adresseEtudiant ? (
+                <>
+                  Sent to <strong>{adresseEtudiant}</strong> from contact@protranslayte.com — the
+                  address {c.prenom} already received their translations from.
+                </>
+              ) : (
+                <>
+                  No email address on file for {c.prenom}, so the email reminder can&apos;t be sent.
+                  A text message can still be requested.
+                </>
+              )}
+            </p>
+
+            {/* L'étudiant s'en est occupé de son côté : la ligne cesse d'être
+                rouge sans qu'on ait à déposer quoi que ce soit. */}
             <div className="pt-ajout">
-              <h3>Already have one of these?</h3>
+              <h3>Already taken care of?</h3>
               <p>
-                If a record was translated elsewhere, add it here and it stops showing as missing.
-                It stays out of the certified document — our certificate only covers what we
-                translated ourselves.
+                If the student has handled a record another way, tick it here and it stops showing
+                as missing. Nothing is added to the certified document.
               </p>
               {a.manquantes.map((m) => (
                 <form
                   key={m.requirement}
-                  action={ctx.lien('/ajouter')}
-                  method="post"
-                  encType="multipart/form-data"
+                  action={cocherReglee.bind(null, slug, c.id, m.requirement)}
                   className="pt-ajout-ligne"
                 >
-                  <input type="hidden" name="sportif" value={c.id} />
-                  <input type="hidden" name="requirement" value={m.requirement} />
                   <span className="pt-ajout-nom">{m.requirement}</span>
-                  <input type="file" name="fichier" accept=".pdf,.jpg,.jpeg,.png" required />
-                  <button type="submit" className="pt-bouton">Add</button>
+                  <button type="submit" className="pt-bouton">Mark as handled</button>
                 </form>
               ))}
             </div>
@@ -198,23 +210,18 @@ export default async function DossierSportif({
                 <span className={`pt-etat ${et.ton}`}>{et.texte}</span>
               </div>
 
-              {ajoutePour.get(an.pieces[0]?.requirement ?? '') && (
+              {regleePour.get(an.pieces[0]?.requirement ?? '') && (
                 <div className="pt-volet vide" style={{ borderTop: '1px solid var(--pt-rule)' }}>
-                  <span className="pt-volet-lab">Added by {ctx.org.nom}</span>
-                  Translated elsewhere, added on{' '}
-                  {ajoutePour.get(an.pieces[0].requirement)!.ajouteLe.toISOString().slice(0, 10)} by{' '}
-                  {ajoutePour.get(an.pieces[0].requirement)!.ajoutePar} — not covered by our
-                  certificate.
+                  <span className="pt-volet-lab">Handled elsewhere</span>
+                  Marked as taken care of on{' '}
+                  {regleePour.get(an.pieces[0].requirement)!.regleeLe.toISOString().slice(0, 10)} by{' '}
+                  {regleePour.get(an.pieces[0].requirement)!.regleePar} — not part of the certified
+                  document.
                   <form
-                    action={retirerAjout.bind(
-                      null,
-                      slug,
-                      c.id,
-                      ajoutePour.get(an.pieces[0].requirement)!.id,
-                    )}
+                    action={decocherReglee.bind(null, slug, c.id, an.pieces[0].requirement)}
                     style={{ marginTop: 8 }}
                   >
-                    <button type="submit" className="pt-bouton">Remove this document</button>
+                    <button type="submit" className="pt-bouton">Undo</button>
                   </form>
                 </div>
               )}
@@ -238,8 +245,8 @@ export default async function DossierSportif({
                       : undefined
                   }
                   videTraduction={
-                    ajoutePour.get(an.pieces[0]?.requirement ?? '')
-                      ? 'Translated elsewhere — this copy was added to the file, not produced by us.'
+                    regleePour.get(an.pieces[0]?.requirement ?? '')
+                      ? 'Handled by the student another way — not produced by us.'
                       : an.rienATraduire
                         ? 'No translation needed — these records were issued in English.'
                         : 'Being translated — usually ready within 48 hours.'

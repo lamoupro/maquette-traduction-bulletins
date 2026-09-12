@@ -15,6 +15,13 @@
       "when": 1789204890979,
       "tag": "0001_sturdy_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789206671992,
+      "tag": "0002_reglees",
+      "breakpoints": true
     }
   ]
 }

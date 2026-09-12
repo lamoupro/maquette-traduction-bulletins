@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db } from './db/client';
-import { piecesAjoutees, rappels } from './db/schema';
+import { piecesReglees, rappels } from './db/schema';
 import type { Candidat, Piece } from '@/lib/portail-demo';
 
 /* Ce qui s'ajoute au dossier après sa livraison : les relances parties, et
@@ -10,7 +10,8 @@ import type { Candidat, Piece } from '@/lib/portail-demo';
    lui-même, qui est encore lu dans un fichier de code. C'est la couture entre
    les deux mondes, et elle est ici plutôt qu'éparpillée dans les écrans. */
 
-export type Rappel = { canal: 'email' | 'whatsapp'; envoyeLe: Date; envoyePar: string };
+export type Canal = 'email' | 'whatsapp' | 'sms';
+export type Rappel = { canal: Canal; envoyeLe: Date; envoyePar: string };
 
 /** Le dernier rappel envoyé pour ce sportif, s'il y en a eu un. */
 export async function dernierRappel(
@@ -29,103 +30,81 @@ export async function dernierRappel(
 export async function noterRappel(
   organisationId: string,
   sportifId: string,
-  canal: 'email' | 'whatsapp',
+  canal: Canal,
   envoyePar: string,
 ) {
   await db.insert(rappels).values({ organisationId, sportifId, canal, envoyePar });
 }
 
-/* ---------- Les pièces ajoutées à la main ---------- */
+/* ---------- Les pièces réglées ailleurs ---------- */
 
-export type PieceAjoutee = {
-  id: string;
-  requirement: string;
-  chemin: string;
-  nomFichier: string;
-  pages: number | null;
-  ajouteLe: Date;
-  ajoutePar: string;
-};
+export type PieceReglee = { requirement: string; regleeLe: Date; regleePar: string };
 
-export async function ajoutsDe(
-  organisationId: string,
-  sportifId: string,
-): Promise<PieceAjoutee[]> {
+export async function regleesDe(organisationId: string, sportifId: string): Promise<PieceReglee[]> {
   return db
     .select({
-      id: piecesAjoutees.id,
-      requirement: piecesAjoutees.requirement,
-      chemin: piecesAjoutees.chemin,
-      nomFichier: piecesAjoutees.nomFichier,
-      pages: piecesAjoutees.pages,
-      ajouteLe: piecesAjoutees.ajouteLe,
-      ajoutePar: piecesAjoutees.ajoutePar,
+      requirement: piecesReglees.requirement,
+      regleeLe: piecesReglees.regleeLe,
+      regleePar: piecesReglees.regleePar,
     })
-    .from(piecesAjoutees)
+    .from(piecesReglees)
     .where(
-      and(
-        eq(piecesAjoutees.organisationId, organisationId),
-        eq(piecesAjoutees.sportifId, sportifId),
-      ),
+      and(eq(piecesReglees.organisationId, organisationId), eq(piecesReglees.sportifId, sportifId)),
     );
 }
 
-export async function enregistrerAjout(v: {
-  organisationId: string;
-  sportifId: string;
-  requirement: string;
-  chemin: string;
-  nomFichier: string;
-  pages: number | null;
-  ajoutePar: string;
-}) {
-  await db.insert(piecesAjoutees).values(v);
+export async function marquerReglee(
+  organisationId: string,
+  sportifId: string,
+  requirement: string,
+  regleePar: string,
+) {
+  await db
+    .insert(piecesReglees)
+    .values({ organisationId, sportifId, requirement, regleePar })
+    .onConflictDoNothing();
 }
 
-export const supprimerAjout = (organisationId: string, id: string) =>
+export const annulerReglee = (organisationId: string, sportifId: string, requirement: string) =>
   db
-    .delete(piecesAjoutees)
-    .where(and(eq(piecesAjoutees.organisationId, organisationId), eq(piecesAjoutees.id, id)));
+    .delete(piecesReglees)
+    .where(
+      and(
+        eq(piecesReglees.organisationId, organisationId),
+        eq(piecesReglees.sportifId, sportifId),
+        eq(piecesReglees.requirement, requirement),
+      ),
+    );
 
 /* ---------- La fusion ----------
 
-   Une pièce ajoutée cesse d'être « manquante » : du point de vue de l'agence,
-   le document est là et le dossier peut partir. Elle ne devient pas pour
-   autant une pièce livrée par nous — `traductionRequise: false` la sort du
-   décompte des traductions, et l'absence de `livraison` la tient hors du
-   document certifié, où elle n'a rien à faire. */
-export function fusionnerAjouts(c: Candidat, ajouts: PieceAjoutee[]): Candidat {
-  if (ajouts.length === 0) return c;
-  const parIntitule = new Map(ajouts.map((a) => [a.requirement, a]));
+   Une pièce cochée cesse de manquer : du point de vue de l'agence, l'étudiant
+   a fait ce qu'il devait et le dossier peut partir. Elle ne devient pas pour
+   autant une pièce livrée par nous — sans fichier et sans livraison, elle ne
+   peut entrer ni dans une consultation ni dans le document certifié, où elle
+   n'aurait rien à faire. */
+export function fusionnerReglees(c: Candidat, reglees: PieceReglee[]): Candidat {
+  if (reglees.length === 0) return c;
+  const cochees = new Set(reglees.map((r) => r.requirement));
 
   return {
     ...c,
-    pieces: c.pieces.map((p): Piece => {
-      const a = parIntitule.get(p.requirement);
-      if (!a || p.etat !== 'missing') return p;
-      return {
-        ...p,
-        etat: 'received',
-        traductionRequise: false,
-        original: {
-          nom: a.nomFichier,
-          pages: a.pages ?? 1,
-          recuLe: a.ajouteLe.toISOString().slice(0, 10),
-          fichier: a.chemin,
-        },
-      };
-    }),
+    pieces: c.pieces.map((p): Piece =>
+      cochees.has(p.requirement) && p.etat === 'missing'
+        ? { ...p, etat: 'received', traductionRequise: false }
+        : p,
+    ),
   };
 }
 
-/** Toutes les pièces ajoutées d'une organisation, rangées par sportif. */
-export async function ajoutsParSportif(organisationId: string) {
+/** Toutes les pièces réglées d'une organisation, rangées par sportif. */
+export async function regleesParSportif(organisationId: string) {
   const lignes = await db
     .select()
-    .from(piecesAjoutees)
-    .where(eq(piecesAjoutees.organisationId, organisationId));
+    .from(piecesReglees)
+    .where(eq(piecesReglees.organisationId, organisationId));
 
-  const parSportif = new Map<string, PieceAjoutee[]>();
+  const parSportif = new Map<string, PieceReglee[]>();
   for (const l of lignes) {
     const liste = parSportif.get(l.sportifId) ?? [];
     liste.push(l);

@@ -566,3 +566,6 @@
 .pt-ajout-ligne:last-child { border-bottom: none; }
 .pt-ajout-nom { font-size: 0.86rem; font-weight: 600; min-width: 16ch; }
 .pt-ajout-ligne input[type='file'] { font-size: 0.8rem; max-width: 100%; }
+.pt-relance-note {
+  margin: 10px 0 0; font-size: 0.78rem; color: var(--pt-faint); max-width: 60ch;
+}

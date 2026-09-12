@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { gardeRoute } from '@/lib/agence/garde';
 import { sportifDe } from '@/lib/agence/sportifs';
-import { ajoutsDe, fusionnerAjouts } from '@/lib/agence/suivi';
+import { fusionnerReglees, regleesDe } from '@/lib/agence/suivi';
 import { construireAnnee } from '@/lib/portail-sortie';
 
 export const runtime = 'nodejs';
@@ -28,7 +28,7 @@ export async function GET(
 
   /* Avec les pièces ajoutées à la main : sans ça, un document qu'on vient de
      déposer s'affiche dans le dossier mais refuse de s'ouvrir. */
-  const candidat = fusionnerAjouts(brut, await ajoutsDe(acces.org.id, brut.id));
+  const candidat = fusionnerReglees(brut, await regleesDe(acces.org.id, brut.id));
 
   const assemble = await construireAnnee(candidat, p.get('a') ?? '', p.get('t') === 'translation');
   if (!assemble) {

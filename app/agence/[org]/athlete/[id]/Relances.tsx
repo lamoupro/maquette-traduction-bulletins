@@ -1,48 +1,52 @@
 'use client';
 
-import RelanceWhatsApp from '@/components/portail/RelanceWhatsApp';
+import { useState, useTransition } from 'react';
+import type { ResultatRelance } from './actions';
 
-/* Les deux boutons de relance, qui notent au passage qu'un message est parti.
+/* Les deux rappels. Ils ne préparent plus un message à envoyer soi-même :
+   ils partent.
 
-   Ils n'envoient rien eux-mêmes : ils ouvrent WhatsApp ou la messagerie avec
-   le texte déjà écrit, et c'est la personne qui appuie sur « envoyer ». C'est
-   voulu — le message part de son numéro et de son adresse, pas des nôtres, et
-   l'étudiant répond à quelqu'un qu'il connaît.
-
-   Ce qu'on note, c'est donc « une relance a été déclenchée », pas « un message
-   a été remis ». La nuance compte pour ce qu'on affiche : on dit la date, pas
-   un accusé de réception qu'on n'a pas. */
+   L'e-mail s'envoie depuis contact@protranslayte.com, l'adresse d'où
+   l'étudiant a déjà reçu ses traductions. Le SMS, lui, n'a pas de passerelle
+   ni de numéro en base : le bouton annonce l'envoi et nous fait suivre le
+   texte exact à expédier. Le libellé dit donc « will be sent », pas
+   « sent » — on n'annonce pas un envoi qu'on n'a pas fait. */
 
 export default function Relances({
-  texte,
-  telephone,
-  adresseEmail,
-  onRappel,
+  onEmail,
+  onSms,
+  dejaEnvoye,
 }: {
-  texte: string;
-  telephone?: string;
-  adresseEmail: string;
-  onRappel: (canal: 'email' | 'whatsapp') => Promise<void>;
+  onEmail: () => Promise<ResultatRelance>;
+  onSms: () => Promise<ResultatRelance>;
+  dejaEnvoye: boolean;
 }) {
+  const [etat, setEtat] = useState<ResultatRelance>(undefined);
+  const [enCours, demarrer] = useTransition();
+
+  const lancer = (action: () => Promise<ResultatRelance>) => () => {
+    setEtat(undefined);
+    demarrer(async () => setEtat(await action()));
+  };
+
   return (
-    <div className="pt-relance">
-      <RelanceWhatsApp
-        texte={texte}
-        telephone={telephone}
-        avant={() => {
-          void onRappel('whatsapp');
-        }}
-        enfants="Remind on WhatsApp"
-      />
-      <a
-        className="pt-bouton"
-        href={adresseEmail}
-        onClick={() => {
-          void onRappel('email');
-        }}
-      >
-        Remind by email
-      </a>
-    </div>
+    <>
+      <div className="pt-relance">
+        <button
+          type="button"
+          className="pt-bouton primaire"
+          onClick={lancer(onEmail)}
+          disabled={enCours}
+        >
+          {enCours ? 'Sending…' : dejaEnvoye ? 'Send another email reminder' : 'Send reminder by email'}
+        </button>
+        <button type="button" className="pt-bouton" onClick={lancer(onSms)} disabled={enCours}>
+          Remind by text message
+        </button>
+      </div>
+
+      {etat?.ok && <p className="pt-confirme" style={{ marginTop: 10 }}>✓ {etat.ok}</p>}
+      {etat?.erreur && <p className="pt-erreur" style={{ marginTop: 10 }}>{etat.erreur}</p>}
+    </>
   );
 }

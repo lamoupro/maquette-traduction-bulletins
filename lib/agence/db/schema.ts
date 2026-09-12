@@ -273,7 +273,7 @@ export const organisationsRelations = relations(organisations, ({ many }) => ({
    n'existait, et c'est ce qui obligeait à retenir de tête qui avait déjà été
    relancé, et ce qui manquait vraiment. */
 
-export const canalRappelEnum = pgEnum('canal_rappel', ['email', 'whatsapp']);
+export const canalRappelEnum = pgEnum('canal_rappel', ['email', 'whatsapp', 'sms']);
 
 /* Les relances déjà parties. Notées pour une seule raison : éviter qu'un
    étudiant reçoive quatre fois le même message parce que trois personnes de
@@ -292,17 +292,17 @@ export const rappels = pgTable('rappel', {
   envoyePar: text('envoyePar').notNull(),
 });
 
-/* Une pièce ajoutée à la main, parce qu'elle n'est pas passée par nous.
+/* Une pièce réglée AILLEURS, cochée à la main.
 
    Le cas qui l'a fait naître : un étudiant avait déjà fait traduire son
-   diplôme ailleurs avant de nous confier le reste. La pièce manquait au
-   dossier sans manquer à l'étudiant.
+   diplôme du baccalauréat avant de nous confier le reste. La pièce manquait
+   au dossier sans manquer à l'étudiant, et aucune relance ne l'aurait jamais
+   comblée.
 
-   ELLE N'ENTRE JAMAIS DANS LE DOCUMENT CERTIFIÉ. Notre certificat atteste que
-   la documentation qui suit a été traduite par nous ; y glisser une traduction
-   faite ailleurs rendrait cette attestation fausse. Le portail la range dans
-   le dossier, l'affiche, la laisse consulter — et s'arrête là. */
-export const piecesAjoutees = pgTable('piece_ajoutee', {
+   On note QUE c'est réglé, pas le document lui-même : rien n'est déposé ici,
+   et rien n'entre dans le dossier certifié — notre certificat n'atteste que
+   nos propres traductions. */
+export const piecesReglees = pgTable('piece_reglee', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   organisationId: text('organisationId')
     .notNull()
@@ -310,10 +310,6 @@ export const piecesAjoutees = pgTable('piece_ajoutee', {
   sportifId: text('sportifId').notNull(),
   /** L'intitulé exact de la pièce attendue, tel qu'il figure dans le dossier. */
   requirement: text('requirement').notNull(),
-  /** Le chemin dans le magasin Blob privé — jamais une adresse publique. */
-  chemin: text('chemin').notNull(),
-  nomFichier: text('nomFichier').notNull(),
-  pages: integer('pages'),
-  ajouteLe: timestamp('ajouteLe', { mode: 'date' }).notNull().defaultNow(),
-  ajoutePar: text('ajoutePar').notNull(),
-});
+  regleeLe: timestamp('regleeLe', { mode: 'date' }).notNull().defaultNow(),
+  regleePar: text('regleePar').notNull(),
+}, (t) => [uniqueIndex('reglee_par_piece').on(t.organisationId, t.sportifId, t.requirement)]);
